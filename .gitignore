@@ -1,0 +1,11 @@
+*.pyc
+*.pyo
+*.egg-info
+*.project
+*.swp
+*.pydevproject
+*.sublime-project
+*.sublime-workspace
+*.ropeproject
+*#*#
+*.#*
