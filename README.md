@@ -1,11 +1,8 @@
-.. contents::
-
-Introduction
-============
+# Introduction
 
 This is the first one of a series of Python packages for
 the Zope-based knowledge management platform 
-`loops <http://wissen-statt-suchen.de>`_.
+[loops](http://wissen-statt-suchen.de).
 
 It will contain functionalities for registration and 
 authentication of members of a loops site. 
@@ -15,6 +12,6 @@ the current loops and cybertools repositories.
 
 In order to use this stuff you need `BlueBream <http://bluebream.zope.org/>`_
 and a running loops site. For more information see the 
-`loops info site <http://www.wissen-statt-suchen.de/.1944518342>`_.
+[loops info site](http://www.wissen-statt-suchen.de/.1944518342).
 
 More to come...
