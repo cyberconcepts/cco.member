@@ -1,0 +1,39 @@
+<configure
+   xmlns:zope="http://namespaces.zope.org/zope"
+   xmlns:browser="http://namespaces.zope.org/browser"
+   i18n_domain="loops">
+  
+  <!-- authentication -->
+
+  <zope:adapter
+        name="auth"
+        for="* zope.publisher.interfaces.IRequest"
+        provides="zope.traversing.interfaces.ITraversable"
+        factory="cco.member.auth.AuthURLNameSpace" />
+
+  <zope:utility
+        name="cco.member Session Credentials"
+        provides="zope.app.authentication.interfaces.ICredentialsPlugin"
+        factory="cco.member.auth.SessionCredentialsPlugin" />
+
+  <!-- views -->
+
+  <!--<browser:page for="loops.interfaces.INode"
+        name="login.html"
+        class="cco.member.browser.LoginForm"
+        permission="zope.View" />
+
+  <browser:page for="loops.interfaces.INode"
+        name="logout.html"
+        class="cco.member.browser.Logout"
+        permission="zope.View" />-->
+
+  <zope:adapter
+      name="login.html"
+      for="loops.interfaces.IConcept
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      provides="zope.interface.Interface"
+      factory="cco.member.browser.LoginConcept"
+      permission="zope.View" />
+
+</configure>
