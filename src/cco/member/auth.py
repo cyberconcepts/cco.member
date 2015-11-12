@@ -20,28 +20,25 @@
 Specialized authentication components.
 """
 
+import hashlib
+import logging
+import random
+from datetime import datetime, timedelta
+from email.MIMEText import MIMEText
 import urllib
-from persistent import Persistent
 from zope.app.component import hooks
-from zope.app.container.contained import Contained
 from zope.interface import Interface, implements
-from zope.app.authentication.interfaces import IAuthenticatorPlugin
-from zope.app.authentication.principalfolder import IInternalPrincipal
-from zope.app.authentication.principalfolder import PrincipalInfo
-from zope.app.principalannotation.interfaces import IPrincipalAnnotationUtility
-from zope.app.security.interfaces import IAuthentication
 from zope import component
 from zope.pluggableauth.plugins.session import SessionCredentialsPlugin \
                             as BaseSessionCredentialsPlugin
+from zope.pluggableauth.plugins.session import SessionCredentials
 from zope.publisher.interfaces.http import IHTTPRequest
-from zope import schema
-from zope.traversing.api import getParent
+from zope.session.interfaces import ISession
 from zope.traversing.browser import absoluteURL
 from zope.traversing.namespace import view
 
 from loops.browser.node import getViewConfiguration
 from loops.organize.interfaces import IPresence
-from loops.util import _
 
 
 class AuthURLNameSpace(view):
@@ -52,18 +49,69 @@ class AuthURLNameSpace(view):
         return self.context
 
 
+class TwoFactorSessionCredentials(SessionCredentials):
+
+    def __init__(self, login, password):
+        self.login = login
+        self.password = password
+        self.tan = random.randint(10000000, 99999999)
+        self.timestamp = datetime.now()
+        rng = range(8)
+        self.tanA = random.choice(rng)
+        rng.remove(self.tanA)
+        self.tanB = random.choice(rng)
+        self.hash = (hashlib.
+                        sha224("%s:%s:%s" % (login, password, self.tan)).
+                        hexdigest())
+        self.validated = False
+
+
 class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
 
     def extractCredentials(self, request):
+        if not IHTTPRequest.providedBy(request):
+            return None
+        login = request.get(self.loginfield, None)
+        password = request.get(self.passwordfield, None)
+        session = ISession(request)
+        sessionData = session.get('zope.pluggableauth.browserplugins')
         traversalStack = request.getTraversalStack()
         authMethod = 'standard'
-        if traversalStack and traversalStack[-1].startswith('++auth++'):
+        credentials = None
+        if sessionData:
+            credentials = sessionData.get('credentials')
+            if isinstance(sessionData, TwoFactorSessionCredentials):
+                authMethod = '2factor'
+        if (authMethod == 'standard' and 
+                traversalStack and traversalStack[-1].startswith('++auth++')):
             authMethod = traversalStack[-1][8:]
-            viewAnnotations = request.annotations.setdefault('loops.view', {})
-            viewAnnotations['auth_method'] = authMethod
             #request.setTraversalStack(traversalStack[:-1])
+        #viewAnnotations = request.annotations.setdefault('loops.view', {})
+        #viewAnnotations['auth_method'] = authMethod
         print '***', authMethod
-        return super(SessionCredentialsPlugin, self).extractCredentials(request)
+        #return super(SessionCredentialsPlugin, self).extractCredentials(request)
+        if authMethod == 'standard':
+            return self.extractStandardCredentials(
+                            login, password, session, credentials)
+        elif authMethod == '2factor':
+            return self.extract2FactorCredentials(
+                            login, password, session, credentials)
+        else:
+            return None
+
+    def extractStandardCredentials(self, login, password, session, credentials):
+        if login and password:
+            credentials = SessionCredentials(login, password)
+        if credentials:
+            sessionData = session['zope.pluggableauth.browserplugins']
+            sessionData['credentials'] = credentials
+        else:
+            return None
+        return {'login': credentials.getLogin(),
+                'password': credentials.getPassword()}
+
+    def extract2FactorCredentials(self, login, password, session, credentials):
+        return None
 
     def challenge(self, request):
         if not IHTTPRequest.providedBy(request):

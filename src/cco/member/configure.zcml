@@ -16,6 +16,13 @@
         provides="zope.app.authentication.interfaces.ICredentialsPlugin"
         factory="cco.member.auth.SessionCredentialsPlugin" />
 
+  <!--<zope:class class="cco.member.auth.SessionCredentialsPlugin">
+    <require
+        permission="zope.ManageServices"
+        interface="zope.app.authentication.session.IBrowserFormChallenger"
+        set_schema="zope.app.authentication.session.IBrowserFormChallenger" />
+  </zope:class>-->
+
   <!-- views -->
 
   <!--<browser:page for="loops.interfaces.INode"
