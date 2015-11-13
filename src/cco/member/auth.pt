@@ -1,3 +1,6 @@
+<html i18n:domain="loops">
+
+
 <metal:login define-macro="login_form"
              i18n:domain="zope"
              tal:define="principal request/principal/id">
@@ -18,6 +21,8 @@
                                 request.get('camefrom') or request.URL[-1])" />
         </tal:redirect>
         <tal:form condition="not:submitted">
+          <input type="hidden" name="base_url"
+                 tal:attributes="value request/URL/-1" />
           <div class="row">
             <div class="label" i18n:translate="">User Name</div>
             <div class="field">
@@ -38,3 +43,53 @@
       </form>
     </div>
 </metal:login>
+
+
+<metal:tan define-macro="tan_form"
+           i18n:domain="loops"
+           tal:define="principal request/principal/id;
+                       a request/a|nothing;
+                       b request/b|nothing;
+                       baseUrl request/URL/-1">
+    <h2 i18n:translate="">Login: TAN Entry</h2>
+    <tal:form condition="python:principal == 'zope.anybody' and a and b">
+      <p i18n:translate="">
+        You have received an E-mail with a TAN. Please enter digits 
+        <strong tal:content="request/a">A</strong> and 
+        <strong tal:content="request/b">B</strong> below.</p>
+      <form method="post"
+            tal:attributes="action request/camefrom|baseUrl">
+        <input type="hidden" name="hash" 
+               tal:attributes="value request/h|nothing" />
+        <input type="hidden" name="camefrom"
+               tal:attributes="value request/camefrom|string:">
+        <input type="hidden" name="base_url"
+               tal:attributes="value baseUrl" />
+        <div class="row">
+          <div class="label" i18n:translate="">Tan Field 1</div>
+          <div class="field">
+            <input type="text" name="tan_a" size="2" maxlength="1" 
+                   tal:attributes="value request/tan_a|string:"/>
+          </div>
+        </div>
+        <div class="row">
+          <div class="label" i18n:translate="">Tan Field 2</div>
+          <div class="field">
+            <input type="text" name="tan_b" size="2" maxlength="1" 
+                   tal:attributes="value request/tan_b|string:"/>
+          </div>
+        </div>
+        <div class="row">
+          <input class="form-element" type="submit"
+                 name="SUBMIT" value="Log in" 
+                 i18n:attributes="value login-button" />
+        </div>
+      </form>
+    </tal:form>
+    <tal:redir condition="python:
+                (principal != 'zope.anybody' or not (a and b)) and
+                 request.response.redirect(baseUrl + '/login.html')" />
+</metal:tan>
+
+
+</html>

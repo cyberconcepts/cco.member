@@ -25,7 +25,7 @@ import logging
 import random
 from datetime import datetime, timedelta
 from email.MIMEText import MIMEText
-import urllib
+from urllib import urlencode
 from zope.app.component import hooks
 from zope.interface import Interface, implements
 from zope import component
@@ -39,6 +39,12 @@ from zope.traversing.namespace import view
 
 from loops.browser.node import getViewConfiguration
 from loops.organize.interfaces import IPresence
+from loops.util import _
+
+
+TIMEOUT = timedelta(minutes=5)
+#PRIVKEY = "6LcGPQ4TAAAAABCyA_BCAKPkD6wW--IhUicbAZ11"   # for captcha
+log = logging.getLogger('cco.member.auth')
 
 
 class AuthURLNameSpace(view):
@@ -68,6 +74,10 @@ class TwoFactorSessionCredentials(SessionCredentials):
 
 class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
 
+    tan_a_field = 'tan_a'
+    tan_b_field = 'tan_b'
+    hash_field = 'hash'
+
     def extractCredentials(self, request):
         if not IHTTPRequest.providedBy(request):
             return None
@@ -86,39 +96,102 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
                 traversalStack and traversalStack[-1].startswith('++auth++')):
             authMethod = traversalStack[-1][8:]
             #request.setTraversalStack(traversalStack[:-1])
-        #viewAnnotations = request.annotations.setdefault('loops.view', {})
-        #viewAnnotations['auth_method'] = authMethod
-        print '***', authMethod
-        #return super(SessionCredentialsPlugin, self).extractCredentials(request)
+        viewAnnotations = request.annotations.setdefault('loops.view', {})
+        viewAnnotations['auth_method'] = authMethod
+        log.info('authentication method: %s.' % authMethod)
         if authMethod == 'standard':
             return self.extractStandardCredentials(
-                            login, password, session, credentials)
+                            request, login, password, session, credentials)
         elif authMethod == '2factor':
             return self.extract2FactorCredentials(
-                            login, password, session, credentials)
+                            request, login, password, session, credentials)
         else:
             return None
 
-    def extractStandardCredentials(self, login, password, session, credentials):
+    def extractStandardCredentials(self, request, login, password, 
+                                   session, credentials):
         if login and password:
             credentials = SessionCredentials(login, password)
         if credentials:
             sessionData = session['zope.pluggableauth.browserplugins']
-            sessionData['credentials'] = credentials
+            if credentials != sessionData.get('credentials'):
+                sessionData['credentials'] = credentials
         else:
             return None
         return {'login': credentials.getLogin(),
                 'password': credentials.getPassword()}
 
-    def extract2FactorCredentials(self, login, password, session, credentials):
+    def extract2FactorCredentials(self, request, login, password, 
+                                  session, credentials):
+        tan_a = request.get(self.tan_a_field, None)
+        tan_b = request.get(self.tan_b_field, None)
+        hash = request.get(self.hash_field, None)
+        if (login and password) and not (tan_a or tan_b or hash):
+            return self.processPhase1(request, session, login, password)
+        if (tan_a and tan_b and hash) and not (login or password):
+            credentials = self.processPhase2(request, session, hash, tan_a, tan_b)
+        if credentials and credentials.validated:
+            return {'login': credentials.getLogin(),
+                    'password': credentials.getPassword()}
         return None
+
+    def processPhase1(self, request, session, login, password):
+        sessionData = session['zope.pluggableauth.browserplugins']
+        credentials = TwoFactorSessionCredentials(login, password)
+        sessionData['credentials'] = credentials
+        # send email
+        log.info("Processing phase 1, TAN: %s. " % credentials.tan)
+        params = dict(h=credentials.hash, 
+                      a=credentials.tanA+1, b=credentials.tanB+1)
+        url = self.getUrl(request, '2fa_tan_form.html', params)
+        #if request.get('camefrom'):
+        #    params['camefrom'] = request['camefrom']
+        #baseUrl = request.get('base_url') or ''
+        #if baseUrl and not baseUrl.endswith('/'):
+        #    baseUrl += '/'
+        #url = '%s@@2fa_tan_form.html?%s' % (baseUrl, urlencode(params))
+        return request.response.redirect(url)
+
+    def processPhase2(self, request, session, hash, tan_a, tan_b):
+        def _validate_tans(a, b, creds):
+            tan = str(creds.tan)
+            return tan[creds.tanA] == a and tan[creds.tanB] == b
+        sessionData = session['zope.pluggableauth.browserplugins']
+        credentials = sessionData.get('credentials')
+        if not credentials:
+            msg = 'Missing credentials'
+            return log.warn(msg)
+        if credentials.hash != hash:
+            msg = 'Illegal hash.'
+            return log.warn(msg)
+        if credentials.timestamp < datetime.now() - TIMEOUT:
+            msg = 'Timeout exceeded'
+            return log.war(msg)
+        if not _validate_tans(tan_a, tan_b, credentials):
+            msg = 'TAN digits not correct'
+            log.warn(msg)
+            params = dict(h=credentials.hash, 
+                          a=credentials.tanA+1, b=credentials.tanB+1)
+            url = self.getUrl(request, '2fa_tan_form.html', params)
+            return request.response.redirect(url)
+        credentials.validated = True
+        log.info('Credentials valid')
+        if request.get('camefrom'):
+            request.response.redirect(request['camefrom'])
+        return credentials
+
+    def getUrl(self, request, action, params):
+        if request.get('camefrom'):
+            params['camefrom'] = request['camefrom']
+        baseUrl = request.get('base_url') or ''
+        if baseUrl and not baseUrl.endswith('/'):
+            baseUrl += '/'
+        return '%s%s?%s' % (baseUrl, action, urlencode(params))
 
     def challenge(self, request):
         if not IHTTPRequest.providedBy(request):
             return False
         site = hooks.getSite()
-        #camefrom = request.getURL() # wrong when object is not viewable
-        #camefrom = request.getApplicationURL() + request['PATH_INFO']
         path = request['PATH_INFO'].split('/++/')[-1] # strip virtual host stuff
         if not path.startswith('/'):
             path = '/' + path
@@ -127,7 +200,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
             camefrom = '/'.join(camefrom.split('/')[:-1])
         url = '%s/@@%s?%s' % (absoluteURL(site, request),
                               self.loginpagename,
-                              urllib.urlencode({'camefrom': camefrom}))
+                              urlencode({'camefrom': camefrom}))
         request.response.redirect(url)
         return True
 

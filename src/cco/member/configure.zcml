@@ -25,12 +25,17 @@
 
   <!-- views -->
 
-  <!--<browser:page for="loops.interfaces.INode"
+  <browser:page for="loops.interfaces.INode"
         name="login.html"
         class="cco.member.browser.LoginForm"
         permission="zope.View" />
 
   <browser:page for="loops.interfaces.INode"
+        name="2fa_tan_form.html"
+        class="cco.member.browser.TanForm"
+        permission="zope.View" />
+
+  <!-- <browser:page for="loops.interfaces.INode"
         name="logout.html"
         class="cco.member.browser.Logout"
         permission="zope.View" />-->

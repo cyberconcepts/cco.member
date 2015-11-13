@@ -38,11 +38,9 @@ template = ViewPageTemplateFile('auth.pt')
 
 class LoginConcept(ConceptView):
 
-    template = template
-
     @Lazy
     def macro(self):
-        return self.template.macros['login_form']
+        return template.macros['login_form']
 
 
 class LoginForm(NodeView, LoginConcept):
@@ -50,6 +48,13 @@ class LoginForm(NodeView, LoginConcept):
     @Lazy
     def item(self):
         return self
+
+
+class TanForm(LoginForm):
+
+    @Lazy
+    def macro(self):
+        return template.macros['tan_form']
 
 
 class Logout(object):
