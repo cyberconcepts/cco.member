@@ -29,6 +29,7 @@ from urllib import urlencode
 from zope.app.component import hooks
 from zope.interface import Interface, implements
 from zope import component
+from zope.pluggableauth.interfaces import IAuthenticatedPrincipalFactory
 from zope.pluggableauth.plugins.session import SessionCredentialsPlugin \
                             as BaseSessionCredentialsPlugin
 from zope.pluggableauth.plugins.session import SessionCredentials
@@ -39,6 +40,7 @@ from zope.traversing.namespace import view
 
 from loops.browser.node import getViewConfiguration
 from loops.organize.interfaces import IPresence
+from loops.organize.party import getAuthenticationUtility
 from loops.util import _
 
 
@@ -95,10 +97,9 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         if (authMethod == 'standard' and 
                 traversalStack and traversalStack[-1].startswith('++auth++')):
             authMethod = traversalStack[-1][8:]
-            #request.setTraversalStack(traversalStack[:-1])
         viewAnnotations = request.annotations.setdefault('loops.view', {})
         viewAnnotations['auth_method'] = authMethod
-        log.info('authentication method: %s.' % authMethod)
+        #log.info('authentication method: %s.' % authMethod)
         if authMethod == 'standard':
             return self.extractStandardCredentials(
                             request, login, password, session, credentials)
@@ -144,12 +145,6 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         params = dict(h=credentials.hash, 
                       a=credentials.tanA+1, b=credentials.tanB+1)
         url = self.getUrl(request, '2fa_tan_form.html', params)
-        #if request.get('camefrom'):
-        #    params['camefrom'] = request['camefrom']
-        #baseUrl = request.get('base_url') or ''
-        #if baseUrl and not baseUrl.endswith('/'):
-        #    baseUrl += '/'
-        #url = '%s@@2fa_tan_form.html?%s' % (baseUrl, urlencode(params))
         return request.response.redirect(url)
 
     def processPhase2(self, request, session, hash, tan_a, tan_b):
@@ -161,21 +156,23 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         if not credentials:
             msg = 'Missing credentials'
             return log.warn(msg)
+        log.info("Processing phase 2, TAN: %s. " % credentials.tan)
         if credentials.hash != hash:
             msg = 'Illegal hash.'
             return log.warn(msg)
         if credentials.timestamp < datetime.now() - TIMEOUT:
-            msg = 'Timeout exceeded'
-            return log.war(msg)
+            msg = 'Timeout exceeded.'
+            return log.warn(msg)
         if not _validate_tans(tan_a, tan_b, credentials):
-            msg = 'TAN digits not correct'
+            msg = 'TAN digits not correct.'
             log.warn(msg)
             params = dict(h=credentials.hash, 
                           a=credentials.tanA+1, b=credentials.tanB+1)
             url = self.getUrl(request, '2fa_tan_form.html', params)
             return request.response.redirect(url)
         credentials.validated = True
-        log.info('Credentials valid')
+        log.info('Credentials valid.')
+        sessionData['credentials'] = credentials
         if request.get('camefrom'):
             request.response.redirect(request['camefrom'])
         return credentials
@@ -208,4 +205,32 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         presence = component.getUtility(IPresence)
         presence.removePresentUser(request.principal.id)
         super(SessionCredentialsPlugin, self).logout(request)
+
+
+def getCredentials(request):
+    session = ISession(request)
+    sessionData = session.get('zope.pluggableauth.browserplugins')
+    if not sessionData:
+        return None
+    return sessionData.get('credentials')
+
+
+def getPrincipalFromCredentials(context, request, credentials):
+    if not credentials:
+        return None
+    cred = dict(login=credentials.getLogin(), 
+                password=credentials.getPassword())
+    auth = getAuthenticationUtility(context)
+    authenticatorPlugins = [p for n, p in auth.getAuthenticatorPlugins()]
+    for authplugin in authenticatorPlugins:
+        if authplugin is None:
+            continue
+        info = authplugin.authenticateCredentials(cred)
+        if info is None:
+            continue
+        info.authenticatorPlugin = authplugin
+        principal = component.getMultiAdapter((info, request),
+            IAuthenticatedPrincipalFactory)(auth)
+        principal.id = auth.prefix + info.id
+        return principal
 

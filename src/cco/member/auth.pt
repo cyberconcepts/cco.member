@@ -50,13 +50,16 @@
            tal:define="principal request/principal/id;
                        a request/a|nothing;
                        b request/b|nothing;
+                       email item/sendTanEmail;
                        baseUrl request/URL/-1">
     <h2 i18n:translate="">Login: TAN Entry</h2>
-    <tal:form condition="python:principal == 'zope.anybody' and a and b">
-      <p i18n:translate="">
-        You have received an E-mail with a TAN. Please enter digits 
-        <strong tal:content="request/a">A</strong> and 
-        <strong tal:content="request/b">B</strong> below.</p>
+    <tal:form condition="python:principal == 'zope.anybody' and a and b and email">
+      <p i18n:translate="message_enter_tan_digits_$email_$a_$b">
+        An E-mail with a TAN has been sent to 
+        <span tal:content="email" i18n:name="email" />. 
+        Please enter digits 
+        <strong tal:content="request/a" i18n:name="a">A</strong> and 
+        <strong tal:content="request/b" i18n:name="b">B</strong> below.</p>
       <form method="post"
             tal:attributes="action request/camefrom|baseUrl">
         <input type="hidden" name="hash" 
@@ -87,7 +90,7 @@
       </form>
     </tal:form>
     <tal:redir condition="python:
-                (principal != 'zope.anybody' or not (a and b)) and
+                (principal != 'zope.anybody' or not (a and b and email)) and
                  request.response.redirect(baseUrl + '/login.html')" />
 </metal:tan>
 

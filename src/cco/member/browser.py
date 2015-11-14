@@ -20,17 +20,24 @@
 Login, logout, unauthorized stuff.
 """
 
+from email.MIMEText import MIMEText
 from zope.app.exception.browser.unauthorized import Unauthorized as DefaultUnauth
 from zope.app.pagetemplate import ViewPageTemplateFile
 from zope.app.security.interfaces import IAuthentication
 from zope.app.security.interfaces import ILogout, IUnauthenticatedPrincipal
 from zope.cachedescriptors.property import Lazy
 from zope import component
+from zope.i18n import translate
 from zope.interface import implements
 from zope.publisher.interfaces.http import IHTTPRequest
+from zope.sendmail.interfaces import IMailDelivery
 
+from cco.member.auth import getCredentials, getPrincipalFromCredentials
 from loops.browser.concept import ConceptView
 from loops.browser.node import NodeView, getViewConfiguration
+from loops.common import adapted
+from loops.organize.party import getPersonForUser
+from loops.util import _
 
 
 template = ViewPageTemplateFile('auth.pt')
@@ -55,6 +62,40 @@ class TanForm(LoginForm):
     @Lazy
     def macro(self):
         return template.macros['tan_form']
+
+    @Lazy
+    def credentials(self):
+        return getCredentials(self.request)
+
+    def sendTanEmail(self):
+        if self.credentials is None:
+            return None
+        person = None
+        principal = getPrincipalFromCredentials(
+                            self.context, self.request, self.credentials)
+        if principal is not None:
+            person = adapted(getPersonForUser(
+                            self.context, self.request, principal))
+        if person is None:     # invalid credentials
+            # TODO: display message
+            return None
+        tan = self.credentials.tan
+        recipient = person.email
+        recipients = [recipient]
+        lang = self.languageInfo.language
+        subject = translate(_(u'tan_mail_subject'), target_language=lang)
+        message = translate(_(u'tan_mail_text_$tan', mapping=dict(tan=tan)),
+                            target_language=lang)
+        senderInfo = self.globalOptions('email.sender')
+        sender = senderInfo and senderInfo[0] or 'info@loops.cy55.de'
+        sender = sender.encode('UTF-8')
+        msg = MIMEText(message.encode('UTF-8'), 'plain', 'UTF-8')
+        msg['Subject'] = subject.encode('UTF-8')
+        msg['From'] = sender
+        msg['To'] = ', '.join(recipients)
+        mailhost = component.getUtility(IMailDelivery, 'Mail')
+        mailhost.send(sender, recipients, msg.as_string())
+        return recipient
 
 
 class Logout(object):
