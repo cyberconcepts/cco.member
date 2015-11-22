@@ -145,7 +145,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         params = dict(h=credentials.hash, 
                       a=credentials.tanA+1, b=credentials.tanB+1)
         url = self.getUrl(request, '2fa_tan_form.html', params)
-        return request.response.redirect(url)
+        return request.response.redirect(url, trusted=True)
 
     def processPhase2(self, request, session, hash, tan_a, tan_b):
         def _validate_tans(a, b, creds):
