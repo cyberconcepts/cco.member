@@ -3,6 +3,8 @@ cco.member - cyberconcepts.org: member registration and authentication
 ======================================================================
 
   >>> from zope.publisher.browser import TestRequest
+  >>> from logging import getLogger
+  >>> log = getLogger('cco.member.auth')
 
   >>> from loops.setup import addAndConfigureObject, addObject
   >>> from loops.concept import Concept
@@ -40,3 +42,13 @@ TAN entry form) is executed.
 
   >>> scp.extractCredentials(req)
   '2fa_tan_form.html?a=...&h=...&b=...'
+
+What if we enter data for authentication phase 2? No authentication
+because the hashes don't match.
+
+  >>> input = dict(hash='#dummy#', tan_a='1', tan_b='2')
+  >>> req = TestRequest(home, form=input)
+  >>> req.setTraversalStack(['++auth++2factor'])
+
+  >>> scp.extractCredentials(req)
+
