@@ -1,10 +1,10 @@
-<html i18n:domain="loops">
+<html i18n:domain="cco.member">
 
 
 <metal:login define-macro="login_form"
-             i18n:domain="zope"
+             i18n:domain="cco.member"
              tal:define="principal request/principal/id">
-    <h2>Login</h2>
+    <h2 i18n:translate="">Login</h2>
     <div>
       <p i18n:translate=""
          tal:condition="python: principal == 'zope.anybody'">
@@ -46,7 +46,7 @@
 
 
 <metal:tan define-macro="tan_form"
-           i18n:domain="loops"
+           i18n:domain="cco.member"
            tal:define="principal request/principal/id;
                        a request/a|nothing;
                        b request/b|nothing;

@@ -1,0 +1,16 @@
+msgid ""
+msgstr ""
+
+"Project-Id-Version: 1.0\n"
+"POT-Creation-Date: 2015-11-23 12:00 CET\n"
+"PO-Revision-Date: 2015-11-23 12:00 CET\n"
+"Last-Translator: Helmut Merz <helmutm@cy55.de>\n"
+"Language-Team: cco.member developers <helmutm@cy55.de>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: kwrite\n"
+
+msgid "Login"
+msgstr ""
+

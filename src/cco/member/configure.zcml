@@ -1,8 +1,11 @@
 <configure
    xmlns:zope="http://namespaces.zope.org/zope"
    xmlns:browser="http://namespaces.zope.org/browser"
-   i18n_domain="loops">
+   xmlns:i18n="http://namespaces.zope.org/i18n"
+   i18n_domain="cco.member">
   
+  <i18n:registerTranslations directory="locales" />
+
   <!-- authentication -->
 
   <zope:adapter

@@ -1,0 +1,31 @@
+msgid ""
+msgstr ""
+
+"Project-Id-Version: 1.0\n"
+"POT-Creation-Date: 2015-11-23 12:00 CET\n"
+"PO-Revision-Date: 2015-11-23 12:00+0100\n"
+"Last-Translator: Helmut Merz <helmutm@cy55.de>\n"
+"Language-Team: STEG developers <helmutm@cy55.de>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: sublime_text\n"
+
+msgid "Login"
+msgstr "Anmeldung"
+
+msgid "Please provide Login Information"
+msgstr "Bitte geben Sie ihre Anmeldedaten ein"
+
+msgid "User Name"
+msgstr "Benutzername"
+
+msgid "Password"
+msgstr "Passwort"
+
+msgid "login-button"
+msgstr "Anmelden"
+
+msgid "message_enter_tan_digits_$email_$a_$b"
+msgstr "Ein E-Mail mit einer Transaktionsnummer (TAN) wurde an die Adresse $email gesendet. Bitte geben Sie die $a. und die $b. Ziffer dieser TAN in die untenstehenden Felder ein."
+
