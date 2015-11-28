@@ -23,9 +23,24 @@ msgstr "Benutzername"
 msgid "Password"
 msgstr "Passwort"
 
-msgid "login-button"
+msgid "button_login"
 msgstr "Anmelden"
+
+msgid "button_login_2factor"
+msgstr "Anmelden"
+
+msgid "Login: TAN Entry"
+msgstr "Anmelden: TAN-Eingabe"
 
 msgid "message_enter_tan_digits_$email_$a_$b"
 msgstr "Ein E-Mail mit einer Transaktionsnummer (TAN) wurde an die Adresse $email gesendet. Bitte geben Sie die $a. und die $b. Ziffer dieser TAN in die untenstehenden Felder ein."
+
+msgid "Tan Field 1"
+msgstr "TAN Ziffer 1"
+
+msgid "Tan Field 2"
+msgstr "TAN Ziffer 2"
+
+msgid "button_login_tan"
+msgstr "Anmelden"
 

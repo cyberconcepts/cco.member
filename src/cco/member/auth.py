@@ -162,14 +162,17 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
             return log.warn(msg)
         if credentials.timestamp < datetime.now() - TIMEOUT:
             msg = 'Timeout exceeded.'
+            request.form['loops.message'] = msg
             return log.warn(msg)
         if not _validate_tans(tan_a, tan_b, credentials):
             msg = 'TAN digits not correct.'
             log.warn(msg)
             params = dict(h=credentials.hash, 
                           a=credentials.tanA+1, b=credentials.tanB+1)
+            params['loops.message'] = msg
             url = self.getUrl(request, '2fa_tan_form.html', params)
-            return request.response.redirect(url)
+            request.response.redirect(url)
+            return None
         credentials.validated = True
         log.info('Credentials valid.')
         sessionData['credentials'] = credentials

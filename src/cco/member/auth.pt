@@ -36,7 +36,7 @@
           <div class="row">
               <input class="form-element" type="submit"
                      name="SUBMIT" value="Log in"
-                     i18n:attributes="value login-button" /></div>
+                     i18n:attributes="value button_login" /></div>
           <input type="hidden" name="camefrom"
                  tal:attributes="value request/camefrom | nothing">
         </tal:form>
@@ -85,7 +85,7 @@
         <div class="row">
           <input class="form-element" type="submit"
                  name="SUBMIT" value="Log in" 
-                 i18n:attributes="value login-button" />
+                 i18n:attributes="value button_login_tan" />
         </div>
       </form>
     </tal:form>
