@@ -3,7 +3,7 @@ msgstr ""
 
 "Project-Id-Version: 1.0\n"
 "POT-Creation-Date: 2015-11-23 12:00 CET\n"
-"PO-Revision-Date: 2015-11-23 12:00+0100\n"
+"PO-Revision-Date: 2015-12-13 12:00+0100\n"
 "Last-Translator: Helmut Merz <helmutm@cy55.de>\n"
 "Language-Team: STEG developers <helmutm@cy55.de>\n"
 "MIME-Version: 1.0\n"
@@ -11,35 +11,41 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: sublime_text\n"
 
-msgid "Login"
+msgid "title_login"
 msgstr "Anmeldung"
 
-msgid "Please provide Login Information"
+msgid "description_login"
 msgstr "Bitte geben Sie ihre Anmeldedaten ein"
 
-msgid "User Name"
+msgid "label_login"
 msgstr "Benutzername"
 
-msgid "Password"
+msgid "label_password"
 msgstr "Passwort"
 
 msgid "button_login"
 msgstr "Anmelden"
 
 msgid "button_login_2factor"
-msgstr "Anmelden"
+msgstr "Daten eingeben"
 
-msgid "Login: TAN Entry"
-msgstr "Anmelden: TAN-Eingabe"
+msgid "title_login_tan"
+msgstr "Anmeldung: TAN-Eingabe"
 
 msgid "message_enter_tan_digits_$email_$a_$b"
 msgstr "Ein E-Mail mit einer Transaktionsnummer (TAN) wurde an die Adresse $email gesendet. Bitte geben Sie die $a. und die $b. Ziffer dieser TAN in die untenstehenden Felder ein."
 
-msgid "Tan Field 1"
-msgstr "TAN Ziffer 1"
+msgid "tan_mail_subject"
+msgstr "Ihre TAN für den Zugang"
 
-msgid "Tan Field 2"
-msgstr "TAN Ziffer 2"
+msgid "tan_mail_text_$tan"
+msgstr "TAN: $tan"
+
+msgid "label_tan_$a"
+msgstr "TAN Ziffer $a"
+
+msgid "label_tan_$b"
+msgstr "TAN Ziffer $b"
 
 msgid "button_login_tan"
 msgstr "Anmelden"

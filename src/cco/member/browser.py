@@ -28,6 +28,7 @@ from zope.app.security.interfaces import ILogout, IUnauthenticatedPrincipal
 from zope.cachedescriptors.property import Lazy
 from zope import component
 from zope.i18n import translate
+from zope.i18nmessageid import MessageFactory
 from zope.interface import implements
 from zope.publisher.interfaces.http import IHTTPRequest
 from zope.sendmail.interfaces import IMailDelivery
@@ -37,8 +38,9 @@ from loops.browser.concept import ConceptView
 from loops.browser.node import NodeView, getViewConfiguration
 from loops.common import adapted
 from loops.organize.party import getPersonForUser
-from loops.util import _
 
+
+_ = MessageFactory('cco.member')
 
 template = ViewPageTemplateFile('auth.pt')
 
