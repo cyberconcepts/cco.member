@@ -62,12 +62,13 @@ class TwoFactorSessionCredentials(SessionCredentials):
     def __init__(self, login, password):
         self.login = login
         self.password = password
-        self.tan = random.randint(10000000, 99999999)
+        self.tan = random.randint(100000, 999999)
         self.timestamp = datetime.now()
-        rng = range(8)
-        self.tanA = random.choice(rng)
-        rng.remove(self.tanA)
-        self.tanB = random.choice(rng)
+        rng = range(len(str(self.tan)))
+        t1 = random.choice(rng)
+        rng.remove(t1)
+        t2 = random.choice(rng)
+        self.tanA, self.tanB = sorted((t1, t2))
         self.hash = (hashlib.
                         sha224("%s:%s:%s" % (login, password, self.tan)).
                         hexdigest())

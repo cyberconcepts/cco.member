@@ -9,10 +9,6 @@
       <p i18n:translate="description_login"
          tal:condition="python: principal == 'zope.anybody'">
         Please provide Login Information</p>
-      <p i18n:translate=""
-         tal:condition="python: principal != 'zope.anybody'">
-        You are not authorized to perform this action. However, you may login as a
-        different user who is authorized.</p>
       <form method="post"
             tal:define="submitted python:
                             principal != 'zope.anybody' and 'SUBMIT' in request">
