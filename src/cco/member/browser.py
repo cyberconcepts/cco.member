@@ -135,4 +135,5 @@ class Unauthorized(ConceptView):
             v = DefaultUnauth(self.context, self.request)
             return v()
         url = self.nodeView.topMenu.url
-        response.redirect(url + '/unauthorized')
+        #response.redirect(url + '/unauthorized')
+        response.redirect(url)
