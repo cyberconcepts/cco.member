@@ -3,13 +3,15 @@ msgstr ""
 
 "Project-Id-Version: 1.0\n"
 "POT-Creation-Date: 2015-11-23 12:00 CET\n"
-"PO-Revision-Date: 2015-12-13 12:00+0100\n"
+"PO-Revision-Date: 2016-01-27 12:00+0100\n"
 "Last-Translator: Helmut Merz <helmutm@cy55.de>\n"
 "Language-Team: STEG developers <helmutm@cy55.de>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: sublime_text\n"
+
+# authentication
 
 msgid "title_login"
 msgstr "Anmeldung"
@@ -49,4 +51,39 @@ msgstr "TAN Ziffer $b"
 
 msgid "button_login_tan"
 msgstr "Anmelden"
+
+# change password
+
+msgid "label_change_password"
+msgstr "Passwort ändern"
+
+msgid "label_old_password"
+msgstr "Altes Passwort"
+
+msgid "desc_old_password"
+msgstr "Bitte geben Sie Ihr bisheriges Passwort ein."
+
+msgid "label_new_password"
+msgstr "Neues Passwort"
+
+msgid "desc_new_password"
+msgstr "Bitte geben Sie das gewünschte neue Passwort ein."
+
+msgid "label_confirm_new_password"
+msgstr "Neues Passwort wiederholen"
+
+msgid "desc_confirm_new_password"
+msgstr "Bitte wiederholen Sie das neue Passwort."
+
+msgid "message_password_changed"
+msgstr "Ihr Passwort wurde geändert."
+
+msgid "error_password_wrong_oldpw"
+msgstr "Das eingegebene alte Passwort ist nicht korrekt."
+
+msgid "error_password_confirm_nomatch"
+msgstr "Passwort und Passwort-Wiederholung stimmen nicht überein."
+
+msgid "error_password_invalid_pw"
+msgstr "Das eingegebene Passwort entspricht nicht den Anforderungen an ein sicheres Passwort: mindestens acht Zeichen, mindestens eine Ziffer."
 

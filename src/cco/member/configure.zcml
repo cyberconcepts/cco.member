@@ -51,4 +51,10 @@
       factory="cco.member.browser.LoginConcept"
       permission="zope.View" />
 
+  <browser:page
+      for="loops.interfaces.INode"
+      name="cco_change_password.html"
+      class="cco.member.browser.PasswordChange"
+      permission="zope.View" />
+
 </configure>

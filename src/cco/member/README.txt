@@ -52,3 +52,9 @@ because the hashes don't match.
 
   >>> scp.extractCredentials(req)
 
+
+Password Change Form
+====================
+
+  >>> from cco.member.browser import PasswordChange
+

@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2015 Helmut Merz helmutm@cy55.de
+#  Copyright (c) 2016 Helmut Merz helmutm@cy55.de
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -34,9 +34,14 @@ from zope.publisher.interfaces.http import IHTTPRequest
 from zope.sendmail.interfaces import IMailDelivery
 
 from cco.member.auth import getCredentials, getPrincipalFromCredentials
+from cco.member.interfaces import IPasswordChange
+from cybertools.composer.schema.browser.common import schema_macros
+from cybertools.composer.schema.browser.form import Form
+from cybertools.composer.schema.schema import FormState, FormError
 from loops.browser.concept import ConceptView
 from loops.browser.node import NodeView, getViewConfiguration
 from loops.common import adapted
+from loops.organize.interfaces import IMemberRegistrationManager
 from loops.organize.party import getPersonForUser
 
 
@@ -137,3 +142,68 @@ class Unauthorized(ConceptView):
         url = self.nodeView.topMenu.url
         #response.redirect(url + '/unauthorized')
         response.redirect(url)
+
+
+class PasswordChange(NodeView, Form):
+
+    interface = IPasswordChange
+    message = _(u'message_password_changed')
+
+    formErrors = dict(
+        confirm_nomatch=FormError(_(u'error_password_confirm_nomatch')),
+        wrong_oldpw=FormError(_(u'error_password_wrong_oldpw')),
+        invalid_pw=FormError(_(u'error_password_invalid_pw')),
+    )
+
+    label = label_submit = _(u'label_change_password')
+
+    @Lazy
+    def macro(self):
+        return schema_macros.macros['form']
+
+    @Lazy
+    def item(self):
+        return self
+
+    @Lazy
+    def data(self):
+        return dict(oldPassword=u'', password=u'', passwordConfirm=u'')
+
+    def update(self):
+        form = self.request.form
+        if not form.get('action'):
+            return True
+        formState = self.formState = self.validate(form)
+        if formState.severity > 0:
+            return True
+        pw = form.get('password')
+        # TODO: check password: valid according to password policy?
+        pwConfirm = form.get('passwordConfirm')
+        if pw != pwConfirm:
+            fi = formState.fieldInstances['password']
+            fi.setError('confirm_nomatch', self.formErrors)
+            formState.severity = max(formState.severity, fi.severity)
+            return True
+        oldPw = form.get('oldPassword')
+        regMan = IMemberRegistrationManager(self.loopsRoot)
+        principal = self.request.principal
+        result = regMan.changePassword(principal, oldPw, pw)
+        if not result:
+            fi = formState.fieldInstances['oldPassword']
+            fi.setError('wrong_oldpw', self.formErrors)
+            formState.severity = max(formState.severity, fi.severity)
+            return True
+        url = '%s?loops.message=%s' % (self.url, self.message)
+        self.request.response.redirect(url)
+        return False
+
+    def validate(self, data):
+        formState = FormState()
+        for f in self.schema.fields:
+            fi = f.getFieldInstance()
+            value = data.get(f.name)
+            fi.validate(value, data)
+            formState.fieldInstances.append(fi)
+            formState.severity = max(formState.severity, fi.severity)
+        return formState
+
