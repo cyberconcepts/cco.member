@@ -35,6 +35,7 @@ from zope.sendmail.interfaces import IMailDelivery
 
 from cco.member.auth import getCredentials, getPrincipalFromCredentials
 from cco.member.interfaces import IPasswordChange
+from cco.member.pwpolicy import checkPassword
 from cybertools.composer.schema.browser.common import schema_macros
 from cybertools.composer.schema.browser.form import Form
 from cybertools.composer.schema.schema import FormState, FormError
@@ -177,7 +178,11 @@ class PasswordChange(NodeView, Form):
         if formState.severity > 0:
             return True
         pw = form.get('password')
-        # TODO: check password: valid according to password policy?
+        if not checkPassword(pw):
+            fi = formState.fieldInstances['password']
+            fi.setError('invalid_pw', self.formErrors)
+            formState.severity = max(formState.severity, fi.severity)
+            return True
         pwConfirm = form.get('passwordConfirm')
         if pw != pwConfirm:
             fi = formState.fieldInstances['password']

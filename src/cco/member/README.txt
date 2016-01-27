@@ -53,6 +53,19 @@ because the hashes don't match.
   >>> scp.extractCredentials(req)
 
 
+Password Policy Checking
+========================
+
+  >>> from cco.member.pwpolicy import checkPassword
+
+  >>> checkPassword(u'Test123')
+  False
+  >>> checkPassword(u'TestTest')
+  False
+  >>> checkPassword(u'tesT1234')
+  True
+
+
 Password Change Form
 ====================
 
