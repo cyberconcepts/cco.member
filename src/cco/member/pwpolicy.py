@@ -24,10 +24,12 @@ Check passwords for conformance to password policy.
 def checkPassword(pw):
     if len(pw) < 8:
         return False
-    safety = dict(upper=False, digit=False)
+    safety = dict(upper=False, lower=False, nonalpha=False)
     for c in pw:
         if c.isupper():
             safety['upper'] = True
-        if c.isdigit():
-            safety['digit'] = True
+        elif c.islower():
+            safety['lower'] = True
+        else:
+            safety['nonalpha'] = True
     return False not in safety.values()

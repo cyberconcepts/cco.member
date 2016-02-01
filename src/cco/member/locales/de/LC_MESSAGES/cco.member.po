@@ -85,5 +85,5 @@ msgid "error_password_confirm_nomatch"
 msgstr "Passwort und Passwort-Wiederholung stimmen nicht überein."
 
 msgid "error_password_invalid_pw"
-msgstr "Das eingegebene Passwort entspricht nicht den Anforderungen an ein sicheres Passwort: mindestens acht Zeichen, mindestens ein Großbuchstabe, mindestens eine Ziffer."
+msgstr "Das eingegebene Passwort entspricht nicht den Anforderungen an ein sicheres Passwort: mindestens acht Zeichen, Groß- und Kleinbuchstaben, mindestens eine Ziffer oder ein Sonderzeichen."
 

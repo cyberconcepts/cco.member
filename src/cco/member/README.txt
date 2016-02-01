@@ -58,11 +58,15 @@ Password Policy Checking
 
   >>> from cco.member.pwpolicy import checkPassword
 
-  >>> checkPassword(u'Test123')
+  >>> checkPassword(u'Test12.')
   False
   >>> checkPassword(u'TestTest')
   False
+  >>> checkPassword(u'testes.')
+  False
   >>> checkPassword(u'tesT1234')
+  True
+  >>> checkPassword(u'tesTtes.')
   True
 
 
