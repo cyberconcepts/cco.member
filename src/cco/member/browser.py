@@ -141,8 +141,10 @@ class Unauthorized(ConceptView):
             v = DefaultUnauth(self.context, self.request)
             return v()
         url = self.nodeView.topMenu.url
-        #response.redirect(url + '/unauthorized')
-        response.redirect(url)
+        if self.isAnonymous:
+            response.redirect(url)
+        else:
+            response.redirect(url + '/unauthorized')
 
 
 class PasswordChange(NodeView, Form):
