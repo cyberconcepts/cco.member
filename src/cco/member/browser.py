@@ -58,11 +58,25 @@ class LoginConcept(ConceptView):
         return template.macros['login_form']
 
 
-class LoginForm(NodeView, LoginConcept):
+class LoginForm(NodeView):
+
+    @Lazy
+    def macro(self):
+        return template.macros['login_form']
 
     @Lazy
     def item(self):
         return self
+
+    @Lazy
+    def isVisible(self):
+        return self.isAnonymous
+
+    def update(self, topLevel=True):
+        if 'SUBMIT' in self.request.form and not self.isAnonymous:
+            self.request.response.redirect(self.topMenu.url)
+            return False
+        return True
 
 
 class TanForm(LoginForm):
