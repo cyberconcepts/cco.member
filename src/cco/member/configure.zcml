@@ -43,6 +43,11 @@
         class="cco.member.browser.Logout"
         permission="zope.View" />-->
 
+  <browser:page for="loops.interfaces.INode"
+        name="logout_view"
+        class="cco.member.browser.LogoutView"
+        permission="zope.View" />
+
   <zope:adapter
       name="login.html"
       for="loops.interfaces.IConcept

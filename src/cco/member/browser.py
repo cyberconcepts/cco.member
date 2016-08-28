@@ -136,6 +136,17 @@ class Logout(object):
         return self.request.response.redirect(nextUrl)
 
 
+class LogoutView(NodeView):
+
+    @Lazy
+    def body(self):
+        nextUrl = self.topMenu.url
+        if not IUnauthenticatedPrincipal.providedBy(self.request.principal):
+            auth = component.getUtility(IAuthentication)
+            ILogout(auth).logout(self.request)
+        return self.request.response.redirect(nextUrl)
+
+
 class Unauthorized(ConceptView):
 
     isTopLevel = True
