@@ -1,8 +1,7 @@
 Changelog
 =========
 
-1.0-dev (unreleased)
---------------------
+1.0.1 - 2017-01-02
+------------------
 
-- Package created using templer
-  []
+- First public release

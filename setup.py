@@ -1,18 +1,9 @@
 from setuptools import setup, find_packages
 import os
 
-version = '1.0'
+version = '1.0.1'
 
-long_description = (
-    open('README.md').read()
-    + '\n' +
-    'Contributors\n'
-    '============\n'
-    + '\n' +
-    open('CONTRIBUTORS.txt').read()
-    + '\n' +
-    open('CHANGES.txt').read()
-    + '\n')
+long_description = open('README.md').read()
 
 setup(name='cco.member',
       version=version,
@@ -24,10 +15,10 @@ setup(name='cco.member',
         "Programming Language :: Python",
         ],
       keywords='',
-      author='',
-      author_email='',
-      url='http://svn.plone.org/svn/collective/',
-      license='gpl',
+      author='cyberconcepts.org team',
+      author_email='team@cyberconcepts.org',
+      url='https://www.cyberconcepts.org',
+      license='GPL',
       packages=find_packages('src'),
       package_dir = {'': 'src'},
       namespace_packages=['cco'],
@@ -35,6 +26,7 @@ setup(name='cco.member',
       zip_safe=False,
       install_requires=[
           'setuptools',
+          'loops',
           # -*- Extra requirements: -*-
       ],
       entry_points="""
