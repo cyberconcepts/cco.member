@@ -172,7 +172,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
                           a=credentials.tanA+1, b=credentials.tanB+1)
             params['loops.message'] = msg
             url = self.getUrl(request, '2fa_tan_form.html', params)
-            request.response.redirect(url)
+            request.response.redirect(url, trusted=True)
             return None
         credentials.validated = True
         log.info('Credentials valid.')
