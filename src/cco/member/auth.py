@@ -44,7 +44,7 @@ from loops.organize.party import getAuthenticationUtility
 from loops.util import _
 
 
-TIMEOUT = timedelta(minutes=5)
+TIMEOUT = timedelta(minutes=60)
 #PRIVKEY = "6LcGPQ4TAAAAABCyA_BCAKPkD6wW--IhUicbAZ11"   # for captcha
 log = logging.getLogger('cco.member.auth')
 
