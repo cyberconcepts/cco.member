@@ -102,7 +102,7 @@ class TanForm(LoginForm):
             # TODO: display message
             return None
         tan = self.credentials.tan
-        recipient = person.email
+        recipient = getattr(person, 'tan_email', None) or person.email
         recipients = [recipient]
         lang = self.languageInfo.language
         subject = translate(_(u'tan_mail_subject'), target_language=lang)
