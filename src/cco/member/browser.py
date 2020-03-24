@@ -21,6 +21,7 @@ Login, logout, unauthorized stuff.
 """
 
 from email.MIMEText import MIMEText
+import logging
 from zope.app.exception.browser.unauthorized import Unauthorized as DefaultUnauth
 from zope.app.pagetemplate import ViewPageTemplateFile
 from zope.app.security.interfaces import IAuthentication
@@ -45,6 +46,7 @@ from loops.common import adapted
 from loops.organize.interfaces import IMemberRegistrationManager
 from loops.organize.party import getPersonForUser
 
+log = logging.getLogger('cco.member.browser')
 
 _ = MessageFactory('cco.member')
 
@@ -91,17 +93,23 @@ class TanForm(LoginForm):
 
     def sendTanEmail(self):
         if self.credentials is None:
+            log.warn('credentials missing')
             return None
         person = None
+        cred = self.credentials
         principal = getPrincipalFromCredentials(
-                            self.context, self.request, self.credentials)
+                            self.context, self.request, cred)
         if principal is not None:
             person = adapted(getPersonForUser(
                             self.context, self.request, principal))
         if person is None:     # invalid credentials
+            log.warn('invalid credentials: %s, %s, %s' % 
+                (cred.login, cred.password, cred.tan))
             # TODO: display message
             return None
         tan = self.credentials.tan
+        log.info('valid credentials: %s, %s, %s' %
+            (cred.login, cred.password, cred.tan))
         recipient = getattr(person, 'tan_email', None) or person.email
         recipients = [recipient]
         lang = self.languageInfo.language
