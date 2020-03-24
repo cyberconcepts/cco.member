@@ -103,13 +103,10 @@ class TanForm(LoginForm):
             person = adapted(getPersonForUser(
                             self.context, self.request, principal))
         if person is None:     # invalid credentials
-            log.warn('invalid credentials: %s, %s, %s' % 
-                (cred.login, cred.password, cred.tan))
+            log.warn('invalid credentials: %s, %s' % (cred.login, cred.tan))
             # TODO: display message
             return None
         tan = self.credentials.tan
-        log.info('valid credentials: %s, %s, %s' %
-            (cred.login, cred.password, cred.tan))
         recipient = getattr(person, 'tan_email', None) or person.email
         recipients = [recipient]
         lang = self.languageInfo.language

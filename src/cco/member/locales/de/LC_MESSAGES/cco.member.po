@@ -3,7 +3,7 @@ msgstr ""
 
 "Project-Id-Version: 1.0\n"
 "POT-Creation-Date: 2015-11-23 12:00 CET\n"
-"PO-Revision-Date: 2016-01-27 12:00+0100\n"
+"PO-Revision-Date: 2020-03-24 12:00+0100\n"
 "Last-Translator: Helmut Merz <helmutm@cy55.de>\n"
 "Language-Team: STEG developers <helmutm@cy55.de>\n"
 "MIME-Version: 1.0\n"
@@ -51,6 +51,9 @@ msgstr "TAN Ziffer $b"
 
 msgid "button_login_tan"
 msgstr "Anmelden"
+
+msgid "Invalid login data!"
+msgstr "Ungültige Anmeldedaten!"
 
 # change password
 
