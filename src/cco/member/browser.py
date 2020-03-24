@@ -230,7 +230,7 @@ class PasswordChange(NodeView, Form):
             fi.setError('wrong_oldpw', self.formErrors)
             formState.severity = max(formState.severity, fi.severity)
             return True
-        url = '%s?loops.message=%s' % (self.url, self.message)
+        url = '%s?error_message=%s' % (self.url, self.message)
         self.request.response.redirect(url)
         return False
 

@@ -79,7 +79,7 @@ msgid "desc_confirm_new_password"
 msgstr "Bitte wiederholen Sie das neue Passwort."
 
 msgid "message_password_changed"
-msgstr "Ihr Passwort wurde geändert."
+msgstr "Ihr Passwort wurde geändert. Bitte melden Sie sich mit Ihrem neuen Passwort an."
 
 msgid "error_password_wrong_oldpw"
 msgstr "Das eingegebene alte Passwort ist nicht korrekt."
