@@ -62,4 +62,14 @@
       class="cco.member.browser.PasswordChange"
       permission="zope.View" />
 
+  <!-- webapi -->
+
+  <zope:adapter
+      name="member_api_users"
+      for="loops.interfaces.ITypeConcept
+           zope.publisher.interfaces.http.IHTTPRequest"
+      provides="zope.interface.Interface"
+      factory="cco.member.webapi.Users"
+      permission="cco.webapi.Post" />
+
 </configure>

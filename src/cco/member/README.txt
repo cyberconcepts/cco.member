@@ -75,3 +75,8 @@ Password Change Form
 
   >>> from cco.member.browser import PasswordChange
 
+
+Web API
+=======
+
+  >>> from cco.member.webapi import Users
