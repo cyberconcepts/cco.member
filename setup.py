@@ -28,6 +28,7 @@ setup(name='cco.member',
           'setuptools',
           'loops',
           # -*- Extra requirements: -*-
+          'python-jwt'
       ],
       entry_points="""
       # -*- Entry points: -*-

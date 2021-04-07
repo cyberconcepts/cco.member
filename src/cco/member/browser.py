@@ -20,6 +20,10 @@
 Login, logout, unauthorized stuff.
 """
 
+import python_jwt as jwt
+import jwcrypto.jwk as jwk
+import jwcrypto.jws as jws
+from datetime import timedelta
 from email.MIMEText import MIMEText
 import logging
 from zope.app.exception.browser.unauthorized import Unauthorized as DefaultUnauth
@@ -34,8 +38,9 @@ from zope.interface import implements
 from zope.publisher.interfaces.http import IHTTPRequest
 from zope.sendmail.interfaces import IMailDelivery
 
-from cco.member.auth import getCredentials, getPrincipalFromCredentials
-from cco.member.interfaces import IPasswordChange
+from cco.member.auth import getCredentials, getPrincipalFromCredentials,\
+    getPrincipalForUsername
+from cco.member.interfaces import IPasswordChange, IPasswordReset
 from cco.member.pwpolicy import checkPassword
 from cybertools.composer.schema.browser.common import schema_macros
 from cybertools.composer.schema.browser.form import Form
@@ -45,12 +50,20 @@ from loops.browser.node import NodeView, getViewConfiguration
 from loops.common import adapted
 from loops.organize.interfaces import IMemberRegistrationManager
 from loops.organize.party import getPersonForUser
+from loops.organize.util import getPrincipalForUserId, getPrincipalFolder
+
+try:
+    import config
+except ImportError:
+    config = dict()
 
 log = logging.getLogger('cco.member.browser')
 
 _ = MessageFactory('cco.member')
 
 template = ViewPageTemplateFile('auth.pt')
+
+jwt_key = jwk.JWK.generate(kty='RSA', size=2048)
 
 
 class LoginConcept(ConceptView):
@@ -244,3 +257,131 @@ class PasswordChange(NodeView, Form):
             formState.severity = max(formState.severity, fi.severity)
         return formState
 
+
+class PasswordReset(PasswordChange):
+
+    interface = IPasswordReset
+    message = _(u'message_password_reset_successfully')
+    reset_mail_message = _(u'message_password_reset_mail')
+
+    formErrors = dict(
+        invalid_pw=FormError(_(u'error_password_invalid_pw')),
+        invalid_token=FormError(_(u'error_reset_token_invalid')),
+        invalid_username=FormError(_(u'error_username_invalid')),
+    )
+
+    label = label_submit = _(u'label_reset_password')
+
+    @Lazy
+    def macro(self):
+        return template.macros['reset_form']
+
+    @Lazy
+    def item(self):
+        return self
+
+    @Lazy
+    def data(self):
+        return dict(password=u'')
+
+    @Lazy
+    def fields(self):
+        result = super(PasswordReset, self).fields
+        if self.request.form.get('token'):
+            result = [r for r in result if r.name == 'password']
+        else:
+            result = [r for r in result if r.name == 'username']
+        return result
+
+    def sendPasswordResetMail(self, sender, recipients=[], subject='',
+                              message=''):
+        msg = MIMEText(message.encode('UTF-8'), 'plain', 'UTF-8')
+        msg['Subject'] = subject.encode('UTF-8')
+        msg['From'] = sender
+        msg['To'] = ', '.join(recipients)
+        mailhost = component.getUtility(IMailDelivery, 'Mail')
+        mailhost.send(sender, recipients, msg.as_string())
+
+    def update(self):
+        form = self.request.form
+        if not form.get('action'):
+            return True
+        principal = self.request.principal
+        if principal and principal.id != 'zope.anybody':
+            return True
+        formState = self.formState = self.validate(form)
+        if formState.severity > 0:
+            return True
+        token = form.get('token')
+        secret = jwt_key
+        if token:
+            try:
+                header, claims = jwt.verify_jwt(token, secret, ['PS256'])
+            except (jwt._JWTError, jws.InvalidJWSSignature):
+                fi = formState.fieldInstances['password']
+                fi.setError('invalid_token', self.formErrors)
+                formState.severity = max(formState.severity, fi.severity)
+                return True
+            username = claims.get('username')
+            principal = getPrincipalForUsername(username, self.context,
+                                                self.request)
+            if not principal:
+                fi = formState.fieldInstances['password']
+                fi.setError('invalid_username', self.formErrors)
+                formState.severity = max(formState.severity, fi.severity)
+                return True
+            pw = form.get('password')
+            if not checkPassword(pw):
+                fi = formState.fieldInstances['password']
+                fi.setError('invalid_pw', self.formErrors)
+                formState.severity = max(formState.severity, fi.severity)
+                return True
+            principal.setPassword(pw)
+        else:
+            username = form.get('username')
+            principal = getPrincipalForUsername(username, self.context,
+                                                self.request)
+            person = getPersonForUser(self.context, self.request, principal)
+            if not person:
+                fi = formState.fieldInstances['username']
+                fi.setError('invalid_user', self.formErrors)
+                formState.severity = max(formState.severity, fi.severity)
+                return True
+            person = adapted(person)
+            payload = dict(username=username)
+            token = jwt.generate_jwt(payload, secret, 'PS256',
+                                     timedelta(minutes=15))
+            recipient = getattr(person, 'tan_email', None) or person.email
+            recipients = [recipient]
+            lang = self.languageInfo.language
+            domain = self.request.getHeader('HTTP_HOST')
+            subject = translate(_(u'pw_reset_mail_subject_$domain',
+                                  mapping=dict(domain=domain)),
+                                target_language=lang)
+
+            reset_url = '%s?token=%s' % (self.request.getURL(), token)
+            message = translate(_(u'pw_reset_mail_text_$link',
+                                  mapping=dict(link=reset_url)),
+                                target_language=lang)
+            senderInfo = self.globalOptions('email.sender')
+            sender = senderInfo and senderInfo[0] or 'info@loops.cy55.de'
+            sender = sender.encode('UTF-8')
+            self.sendPasswordResetMail(sender, recipients, subject,
+                                       message)
+            url = '%s?error_message=%s' % (self.url, self.reset_mail_message)
+            self.request.response.redirect(url)
+            return False
+
+        url = '%s?error_message=%s' % (self.url, self.message)
+        self.request.response.redirect(url)
+        return False
+
+    def validate(self, data):
+        formState = FormState()
+        for f in self.schema.fields:
+            fi = f.getFieldInstance()
+            value = data.get(f.name)
+            fi.validate(value, data)
+            formState.fieldInstances.append(fi)
+            formState.severity = max(formState.severity, fi.severity)
+        return formState

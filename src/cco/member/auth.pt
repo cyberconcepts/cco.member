@@ -102,5 +102,24 @@
                  request.response.redirect(baseUrl + '?error_message=Invalid+login+data!')" />
 </metal:tan>
 
+<metal:form define-macro="reset_form">
+  <h1 i18n:translate=""
+      tal:content="view/label|default">Edit</h1>
+  <div>
+    <form method="post">
+      <input type="hidden" name="action" value="update" />
+      <tal:token condition="request/token|nothing">
+      <input type="hidden" name="token"
+             tal:attributes="value request/token|string:" />
+      </tal:token>
+      <br />
+      <metal:fields use-macro="view/fieldRenderers/fields" />
+      <br />
+      <input type="submit" name="submit" value="Save"
+             i18n:attributes="value"
+             tal:attributes="value view/label_submit|string:Save" />
+    </form>
+  </div>
+</metal:form>
 
 </html>

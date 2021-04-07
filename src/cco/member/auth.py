@@ -95,7 +95,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
             credentials = sessionData.get('credentials')
             if isinstance(sessionData, TwoFactorSessionCredentials):
                 authMethod = '2factor'
-        if (authMethod == 'standard' and 
+        if (authMethod == 'standard' and
                 traversalStack and traversalStack[-1].startswith('++auth++')):
             authMethod = traversalStack[-1][8:]
         viewAnnotations = request.annotations.setdefault('loops.view', {})
@@ -110,7 +110,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         else:
             return None
 
-    def extractStandardCredentials(self, request, login, password, 
+    def extractStandardCredentials(self, request, login, password,
                                    session, credentials):
         if login and password:
             credentials = SessionCredentials(login, password)
@@ -123,7 +123,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         return {'login': credentials.getLogin(),
                 'password': credentials.getPassword()}
 
-    def extract2FactorCredentials(self, request, login, password, 
+    def extract2FactorCredentials(self, request, login, password,
                                   session, credentials):
         tan_a = request.get(self.tan_a_field, None)
         tan_b = request.get(self.tan_b_field, None)
@@ -143,7 +143,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         sessionData['credentials'] = credentials
         # send email
         log.info("Processing phase 1, TAN: %s. " % credentials.tan)
-        params = dict(h=credentials.hash, 
+        params = dict(h=credentials.hash,
                       a=credentials.tanA+1, b=credentials.tanB+1)
         url = self.getUrl(request, '2fa_tan_form.html', params)
         return request.response.redirect(url, trusted=True)
@@ -168,7 +168,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         if not _validate_tans(tan_a, tan_b, credentials):
             msg = 'TAN digits not correct.'
             log.warn(msg)
-            params = dict(h=credentials.hash, 
+            params = dict(h=credentials.hash,
                           a=credentials.tanA+1, b=credentials.tanB+1)
             params['loops.message'] = msg
             url = self.getUrl(request, '2fa_tan_form.html', params)
@@ -222,7 +222,7 @@ def getCredentials(request):
 def getPrincipalFromCredentials(context, request, credentials):
     if not credentials:
         return None
-    cred = dict(login=credentials.getLogin(), 
+    cred = dict(login=credentials.getLogin(),
                 password=credentials.getPassword())
     auth = getAuthenticationUtility(context)
     authenticatorPlugins = [p for n, p in auth.getAuthenticatorPlugins()]
@@ -238,3 +238,18 @@ def getPrincipalFromCredentials(context, request, credentials):
         principal.id = auth.prefix + info.id
         return principal
 
+def getPrincipalForUsername(username, context, request):
+    auth = getAuthenticationUtility(context)
+    authenticatorPlugins = [p for n, p in auth.getAuthenticatorPlugins()]
+    for authplugin in authenticatorPlugins:
+        if authplugin is None:
+            continue
+        info = authplugin.get(username)
+        if info is None:
+            continue
+        info.authenticatorPlugin = authplugin
+        principal = info
+        #principal = component.getMultiAdapter((info, request),
+        #    IAuthenticatedPrincipalFactory)(auth)
+        principal.id = authplugin.prefix + info.login
+        return principal

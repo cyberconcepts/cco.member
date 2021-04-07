@@ -62,6 +62,12 @@
       class="cco.member.browser.PasswordChange"
       permission="zope.View" />
 
+  <browser:page
+      for="loops.interfaces.INode"
+      name="cco_reset_password.html"
+      class="cco.member.browser.PasswordReset"
+      permission="zope.View" />
+
   <!-- webapi -->
 
   <zope:adapter

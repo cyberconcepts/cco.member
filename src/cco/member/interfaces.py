@@ -46,3 +46,16 @@ class IPasswordChange(Interface):
     password.nostore = True
     passwordConfirm.nostore = True
 
+
+class IPasswordReset(Interface):
+
+    username = schema.TextLine(title=_(u'label_username'),
+                               description=_(u'desc_usernam'),
+                               required=False,)
+
+    password = schema.Password(title=_(u'label_new_password'),
+                               description=_(u'desc_new_password'),
+                               required=False,)
+
+    username.nostore = True
+    password.nostore = True

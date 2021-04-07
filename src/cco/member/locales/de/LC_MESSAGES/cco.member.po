@@ -90,3 +90,27 @@ msgstr "Passwort und Passwort-Wiederholung stimmen nicht überein."
 msgid "error_password_invalid_pw"
 msgstr "Das eingegebene Passwort entspricht nicht den Anforderungen an ein sicheres Passwort: mindestens acht Zeichen, Groß- und Kleinbuchstaben, mindestens eine Ziffer oder ein Sonderzeichen."
 
+# password reset
+msgid "pw_reset_mail_text_$link"
+msgstr "Bitte nutzen Sie folgenden Link für um Ihr Passwort zurückzusetzen: $link"
+
+msgid "pw_reset_mail_subject_$domain"
+msgstr "Ihre Passwort zurücksetzen Anforderung auf $domain"
+
+msgid "message_password_reset_successfully"
+msgstr "Ihr Passwort wurde erfolgreich zurückgesetzt. Sie können sich ab sofort mit Ihrem neuen Passwort einloggen."
+
+msgid "message_password_reset_mail"
+msgstr "Sie erhalten zeitnah eine E-Mail mit dem Passwort Reset Link."
+
+msgid "label_reset_password"
+msgstr "Passwort zurücksetzen"
+
+msgid "error_username_invalid"
+msgstr "Ungültiger Benutzername/ E-Mail"
+
+msgid "error_reset_token_invalid"
+msgstr "Reset Token ungültig/ abgelaufen"
+
+msgid "label_username"
+msgstr "Benutzername/ E-Mail"
