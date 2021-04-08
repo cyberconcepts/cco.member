@@ -344,7 +344,7 @@ class PasswordReset(PasswordChange):
             person = getPersonForUser(self.context, self.request, principal)
             if not person:
                 fi = formState.fieldInstances['username']
-                fi.setError('invalid_user', self.formErrors)
+                fi.setError('invalid_username', self.formErrors)
                 formState.severity = max(formState.severity, fi.severity)
                 return True
             person = adapted(person)
