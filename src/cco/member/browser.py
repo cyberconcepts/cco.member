@@ -317,7 +317,7 @@ class PasswordReset(PasswordChange):
         if token:
             try:
                 header, claims = jwt.verify_jwt(token, secret, ['PS256'])
-            except (jwt._JWTError, jws.InvalidJWSSignature):
+            except (jwt._JWTError, jws.InvalidJWSSignature, ValueError):
                 fi = formState.fieldInstances['password']
                 fi.setError('invalid_token', self.formErrors)
                 formState.severity = max(formState.severity, fi.severity)

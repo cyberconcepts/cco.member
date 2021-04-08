@@ -114,3 +114,6 @@ msgstr "Reset Token ungültig/ abgelaufen"
 
 msgid "label_username"
 msgstr "Benutzername/ E-Mail"
+
+msgid "label_forgot_password"
+msgstr "Passwort vergessen?"
