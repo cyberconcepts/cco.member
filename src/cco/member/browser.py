@@ -55,7 +55,7 @@ from loops.organize.util import getPrincipalForUserId, getPrincipalFolder
 try:
     import config
 except ImportError:
-    config = dict()
+    config = None
 
 log = logging.getLogger('cco.member.browser')
 
@@ -63,7 +63,8 @@ _ = MessageFactory('cco.member')
 
 template = ViewPageTemplateFile('auth.pt')
 
-jwt_key = jwk.JWK.generate(kty='RSA', size=2048)
+#jwt_key = jwk.JWK.generate(kty='RSA', size=2048)
+#jwt_key = jwk.JWK.from_pem(config.jwt_key)
 
 
 class LoginConcept(ConceptView):
@@ -313,7 +314,7 @@ class PasswordReset(PasswordChange):
         if formState.severity > 0:
             return True
         token = form.get('token')
-        secret = jwt_key
+        secret = jwk.JWK.from_pem(config.jwt_key)
         if token:
             try:
                 header, claims = jwt.verify_jwt(token, secret, ['PS256'])
