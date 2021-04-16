@@ -53,7 +53,7 @@ class IPasswordReset(Interface):
                                description=_(u'desc_usernam'),
                                required=False,)
 
-    password = schema.TextLine(title=_(u'label_new_password'),
+    password = schema.Password(title=_(u'label_new_password'),
                                description=_(u'desc_new_password'),
                                required=False,)
 
