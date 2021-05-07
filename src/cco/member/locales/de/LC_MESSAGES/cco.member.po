@@ -106,7 +106,7 @@ msgid "message_password_reset_mail"
 msgstr "Sie erhalten zeitnah eine E-Mail mit dem Passwort Reset Link."
 
 msgid "label_reset_password"
-msgstr "Passwort zurücksetzen"
+msgstr "Passwort (zurück)setzen"
 
 msgid "error_username_invalid"
 msgstr "Ungültiger Benutzername/ E-Mail"
