@@ -352,8 +352,14 @@ class PasswordReset(PasswordChange):
             payload = dict(username=username)
             token = jwt.generate_jwt(payload, secret, 'PS256',
                                      timedelta(minutes=15))
-            recipient = getattr(person, 'tan_email', None) or person.email
-            recipients = [recipient]
+            addr = self.getMailAddress(person)
+            if addr:
+                recipients = [addr]
+            else:
+                fi = formState.fieldInstances['username']
+                fi.setError('invalid_username', self.formErrors)
+                formState.severity = max(formState.severity, fi.severity)
+                return True
             lang = self.languageInfo.language
             domain = self.request.getHeader('HTTP_HOST')
             subject = translate(_(u'pw_reset_mail_subject_$domain',
@@ -376,6 +382,9 @@ class PasswordReset(PasswordChange):
         url = '%s?error_message=%s' % (self.url, self.message)
         self.request.response.redirect(url)
         return False
+
+    def getMailAddress(self, person):
+        return person.email
 
     def validate(self, data):
         formState = FormState()
