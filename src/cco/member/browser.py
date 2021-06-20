@@ -296,7 +296,7 @@ class PasswordReset(PasswordChange):
 
     def sendPasswordResetMail(self, sender, recipients=[], subject='',
                               message=''):
-        msg = MIMEText(message.encode('UTF-8'), 'plain', 'UTF-8')
+        msg = MIMEText(message.encode('UTF-8'), 'html', 'UTF-8')
         msg['Subject'] = subject.encode('UTF-8')
         msg['From'] = sender
         msg['To'] = ', '.join(recipients)
@@ -361,7 +361,10 @@ class PasswordReset(PasswordChange):
                 formState.severity = max(formState.severity, fi.severity)
                 return True
             lang = self.languageInfo.language
-            domain = self.request.getHeader('HTTP_HOST')
+            try:
+                domain = config.baseDomain
+            except:
+                domain = self.request.getHeader('HTTP_HOST')
             subject = translate(_(u'pw_reset_mail_subject_$domain',
                                   mapping=dict(domain=domain)),
                                 target_language=lang)
