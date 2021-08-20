@@ -20,9 +20,12 @@
 Login, logout, unauthorized stuff.
 """
 
-import python_jwt as jwt
-import jwcrypto.jwk as jwk
-import jwcrypto.jws as jws
+try:
+    import python_jwt as jwt
+    import jwcrypto.jwk as jwk
+    import jwcrypto.jws as jws
+except ImportError:
+    pass
 from datetime import timedelta
 from email.MIMEText import MIMEText
 import logging
