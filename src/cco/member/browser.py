@@ -272,6 +272,7 @@ class PasswordReset(PasswordChange):
     )
 
     label = label_submit = _(u'label_reset_password')
+    password_reset_period = 15
 
     @Lazy
     def macro(self):
@@ -351,7 +352,8 @@ class PasswordReset(PasswordChange):
             person = adapted(person)
             payload = dict(username=username)
             token = jwt.generate_jwt(payload, secret, 'PS256',
-                                     timedelta(minutes=15))
+                                     timedelta(minutes=getattr(
+                                         self, 'password_reset_period', 15)))
             recipient = getattr(person, 'tan_email', None) or person.email
             recipients = [recipient]
             lang = self.languageInfo.language
