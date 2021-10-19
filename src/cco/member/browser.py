@@ -20,9 +20,12 @@
 Login, logout, unauthorized stuff.
 """
 
-import python_jwt as jwt
-import jwcrypto.jwk as jwk
-import jwcrypto.jws as jws
+try:
+    import python_jwt as jwt
+    import jwcrypto.jwk as jwk
+    import jwcrypto.jws as jws
+except ImportError:
+    pass
 from datetime import timedelta
 from email.MIMEText import MIMEText
 import logging
@@ -354,8 +357,14 @@ class PasswordReset(PasswordChange):
             token = jwt.generate_jwt(payload, secret, 'PS256',
                                      timedelta(minutes=getattr(
                                          self, 'password_reset_period', 15)))
-            recipient = getattr(person, 'tan_email', None) or person.email
-            recipients = [recipient]
+            addr = self.getMailAddress(person)
+            if addr:
+                recipients = [addr]
+            else:
+                fi = formState.fieldInstances['username']
+                fi.setError('invalid_username', self.formErrors)
+                formState.severity = max(formState.severity, fi.severity)
+                return True
             lang = self.languageInfo.language
             try:
                 domain = config.baseDomain
@@ -381,6 +390,9 @@ class PasswordReset(PasswordChange):
         url = '%s?error_message=%s' % (self.url, self.message)
         self.request.response.redirect(url)
         return False
+
+    def getMailAddress(self, person):
+        return person.email
 
     def validate(self, data):
         formState = FormState()
