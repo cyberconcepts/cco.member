@@ -290,13 +290,39 @@ class PasswordReset(PasswordChange):
         return dict(password=u'')
 
     @Lazy
+    def token(self):
+        return self.request.form.get('token')
+
+    @Lazy
     def fields(self):
         result = super(PasswordReset, self).fields
-        if self.request.form.get('token'):
+        if self.token and self.validateToken(self.token):
             result = [r for r in result if r.name == 'password']
         else:
             result = [r for r in result if r.name == 'username']
         return result
+
+    def getSubject(self, lang=None, domain=None):
+        if not lang:
+            lang = self.languageInfo.language
+        if not domain:
+            try:
+                domain = config.baseDomain
+            except:
+                domain = self.request.getHeader('HTTP_HOST')
+        result = translate(_(u'pw_reset_mail_subject_$domain',
+                             mapping=dict(domain=domain)),
+                           target_language=lang)
+        return result
+
+    def getMessage(self, token, lang=None):
+        if not lang:
+            lang = self.languageInfo.language
+        reset_url = '%s?token=%s' % (self.request.getURL(), token)
+        message = translate(_(u'pw_reset_mail_text_$link',
+                              mapping=dict(link=reset_url)),
+                            target_language=lang)
+        return message
 
     def sendPasswordResetMail(self, sender, recipients=[], subject='',
                               message=''):
@@ -306,6 +332,15 @@ class PasswordReset(PasswordChange):
         msg['To'] = ', '.join(recipients)
         mailhost = component.getUtility(IMailDelivery, 'Mail')
         mailhost.send(sender, recipients, msg.as_string())
+
+    def validateToken(self, token, secret=None):
+        if not secret:
+            secret = jwk.JWK.from_pem(config.jwt_key)
+        try:
+            header, claims = jwt.verify_jwt(token, secret, ['PS256'])
+        except (jwt._JWTError, jws.InvalidJWSSignature, ValueError):
+            return False
+        return True
 
     def update(self):
         form = self.request.form
@@ -320,13 +355,12 @@ class PasswordReset(PasswordChange):
         token = form.get('token')
         secret = jwk.JWK.from_pem(config.jwt_key)
         if token:
-            try:
-                header, claims = jwt.verify_jwt(token, secret, ['PS256'])
-            except (jwt._JWTError, jws.InvalidJWSSignature, ValueError):
+            if not self.validateToken(token, secret):
                 fi = formState.fieldInstances['password']
                 fi.setError('invalid_token', self.formErrors)
                 formState.severity = max(formState.severity, fi.severity)
                 return True
+            header, claims = jwt.verify_jwt(token, secret, ['PS256'])
             username = claims.get('username')
             principal = getPrincipalForUsername(username, self.context,
                                                 self.request)
@@ -370,19 +404,11 @@ class PasswordReset(PasswordChange):
                 domain = config.baseDomain
             except:
                 domain = self.request.getHeader('HTTP_HOST')
-            subject = translate(_(u'pw_reset_mail_subject_$domain',
-                                  mapping=dict(domain=domain)),
-                                target_language=lang)
-
-            reset_url = '%s?token=%s' % (self.request.getURL(), token)
-            message = translate(_(u'pw_reset_mail_text_$link',
-                                  mapping=dict(link=reset_url)),
-                                target_language=lang)
             senderInfo = self.globalOptions('email.sender')
             sender = senderInfo and senderInfo[0] or 'info@loops.cy55.de'
             sender = sender.encode('UTF-8')
-            self.sendPasswordResetMail(sender, recipients, subject,
-                                       message)
+            self.sendPasswordResetMail(sender, recipients, self.getSubject(),
+                                       self.getMessage(token))
             url = '%s?error_message=%s' % (self.url, self.reset_mail_message)
             self.request.response.redirect(url)
             return False
