@@ -2,6 +2,7 @@
 cco.member - cyberconcepts.org: member registration and authentication
 ======================================================================
 
+  >>> from zope.session.interfaces import ISession
   >>> from zope.publisher.browser import TestRequest
   >>> from logging import getLogger
   >>> log = getLogger('cco.member.auth')
@@ -37,6 +38,9 @@ login + password dictionary.
 When the URL contains an authentication method reference to the 2-factor
 authentication the first phase of the authentication (redirection to
 TAN entry form) is executed.
+
+  >>> sdata = ISession(req).get('zope.pluggableauth.browserplugins')
+  >>> sdata['credentials'] = None
 
   >>> req.setTraversalStack(['++auth++2factor'])
 

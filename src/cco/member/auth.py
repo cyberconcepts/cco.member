@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2015 Helmut Merz helmutm@cy55.de
+#  Copyright (c) 2023 Helmut Merz helmutm@cy55.de
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -26,6 +26,8 @@ import random
 from datetime import datetime, timedelta
 from email.MIMEText import MIMEText
 from urllib import urlencode
+import requests
+
 from zope.app.component import hooks
 from zope.interface import Interface, implements
 from zope import component
@@ -42,6 +44,11 @@ from loops.browser.node import getViewConfiguration
 from loops.organize.interfaces import IPresence
 from loops.organize.party import getAuthenticationUtility
 from loops.util import _
+
+try:
+    from config import single_sign_on as sso
+except ImportError:
+    sso = None
 
 
 TIMEOUT = timedelta(minutes=60)
@@ -97,7 +104,9 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
                 authMethod = '2factor'
         if (authMethod == 'standard' and
                 traversalStack and traversalStack[-1].startswith('++auth++')):
-            authMethod = traversalStack[-1][8:]
+            ### SSO: do not switch to 2factor if logged-in via sso
+            if not getattr(credentials, 'sso_source', None):
+                authMethod = traversalStack[-1][8:]
         viewAnnotations = request.annotations.setdefault('loops.view', {})
         viewAnnotations['auth_method'] = authMethod
         #log.info('authentication method: %s.' % authMethod)
@@ -114,14 +123,21 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
                                    session, credentials):
         if login and password:
             credentials = SessionCredentials(login, password)
+        sso_source = request.get('sso_source', None)
+        credentials.sso_source = sso_source
         if credentials:
             sessionData = session['zope.pluggableauth.browserplugins']
-            if credentials != sessionData.get('credentials'):
+            ### SSO: do not overwrite existing credentials on sso login
+            if not sessionData.get('credentials') or sso_source is None: 
                 sessionData['credentials'] = credentials
         else:
             return None
-        return {'login': credentials.getLogin(),
-                'password': credentials.getPassword()}
+        login = credentials.getLogin()
+        password = credentials.getPassword()
+        ### SSO: send login request to sso.targetUrls
+        if sso_source is None:
+            sso_send_login(login, password)
+        return dict(login=login, password=password)
 
     def extract2FactorCredentials(self, request, login, password,
                                   session, credentials):
@@ -133,8 +149,13 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         if (tan_a and tan_b and hash) and not (login or password):
             credentials = self.processPhase2(request, session, hash, tan_a, tan_b)
         if credentials and credentials.validated:
-            return {'login': credentials.getLogin(),
-                    'password': credentials.getPassword()}
+            login = credentials.getLogin()
+            password = credentials.getPassword()
+            ### SSO: send login request to sso.targetUrls
+            sso_source = request.get('sso_source', None)
+            if sso_source is None:
+                sso_send_login(login, password)
+            return dict(login=login, password=password)
         return None
 
     def processPhase1(self, request, session, login, password):
@@ -253,3 +274,12 @@ def getPrincipalForUsername(username, context, request):
         #    IAuthenticatedPrincipalFactory)(auth)
         principal.id = authplugin.prefix + info.login
         return principal
+
+def sso_send_login(login, password):
+    if not sso:
+        return
+    data = dict(login=login, password=password, sso_source=sso.get('source', ''))
+    for url in sso[targets]:
+        resp = requests.post(url, data)
+        log.info('sso_login - url: %s, login: %s -> %s %s.' % (
+            url, login, resp.status_code, resp.text))
