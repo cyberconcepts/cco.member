@@ -279,7 +279,7 @@ def sso_send_login(login, password):
     if not sso:
         return
     data = dict(login=login, password=password, sso_source=sso.get('source', ''))
-    for url in sso[targets]:
+    for url in sso['targets']:
         resp = requests.post(url, data)
         log.info('sso_login - url: %s, login: %s -> %s %s.' % (
             url, login, resp.status_code, resp.text))
