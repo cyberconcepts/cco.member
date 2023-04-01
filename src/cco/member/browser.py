@@ -96,6 +96,19 @@ class LoginConcept(ConceptView):
     def macro(self):
         return template.macros['login_form']
 
+    @Lazy
+    def credentials(self):
+        return getCredentials(self.request)
+
+    def update(self, topLevel=True):
+        if 'SUBMIT' in self.request.form and not self.isAnonymous:
+            ### SSO: send login request to sso.targetUrls
+            cred = self.credentials
+            login = cred.getLogin()
+            password = cred.getPassword()
+            sso_send_login(login, password)
+        super(self, LoginConcept).update(topLevel=topLevel)
+
 
 class LoginForm(NodeView):
 
