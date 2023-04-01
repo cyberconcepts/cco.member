@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2016 Helmut Merz helmutm@cy55.de
+#  Copyright (c) 2023 Helmut Merz helmutm@cy55.de
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -29,6 +29,8 @@ except ImportError:
 from datetime import timedelta
 from email.MIMEText import MIMEText
 import logging
+import requests
+
 from zope.app.exception.browser.unauthorized import Unauthorized as DefaultUnauth
 from zope.app.pagetemplate import ViewPageTemplateFile
 from zope.app.security.interfaces import IAuthentication
@@ -60,6 +62,11 @@ try:
 except ImportError:
     config = None
 
+try:
+    from config import single_sign_on as sso
+except ImportError:
+    sso = None
+
 log = logging.getLogger('cco.member.browser')
 
 _ = MessageFactory('cco.member')
@@ -68,6 +75,19 @@ template = ViewPageTemplateFile('auth.pt')
 
 #jwt_key = jwk.JWK.generate(kty='RSA', size=2048)
 #jwt_key = jwk.JWK.from_pem(config.jwt_key)
+
+
+def sso_send_login(login, password):
+    if not sso:
+        return
+    if request.get('sso_source', None) is not None:
+        return
+    data = dict(login=login, password=password, 
+                sso_source=sso.get('source', ''))
+    for url in sso['targets']:
+        resp = requests.post(url, data, allow_redirects=False)
+        log.info('sso_login - url: %s, login: %s -> %s.' % (
+            url, login, resp.status_code))
 
 
 class LoginConcept(ConceptView):
@@ -92,7 +112,13 @@ class LoginForm(NodeView):
         return self.isAnonymous
 
     def update(self, topLevel=True):
-        if 'SUBMIT' in self.request.form and not self.isAnonymous:
+        form = self.request.form
+        if 'SUBMIT' in form and not self.isAnonymous:
+            ### SSO: send login request to sso.targetUrls
+            login = form.get('login')
+            password = form.get('password')
+            if login and password:
+                sso_send_login(login, password)
             self.request.response.redirect(self.topMenu.url)
             return False
         return True

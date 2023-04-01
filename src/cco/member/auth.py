@@ -26,7 +26,6 @@ import random
 from datetime import datetime, timedelta
 from email.MIMEText import MIMEText
 from urllib import urlencode
-import requests
 
 from zope.app.component import hooks
 from zope.interface import Interface, implements
@@ -44,11 +43,6 @@ from loops.browser.node import getViewConfiguration
 from loops.organize.interfaces import IPresence
 from loops.organize.party import getAuthenticationUtility
 from loops.util import _
-
-try:
-    from config import single_sign_on as sso
-except ImportError:
-    sso = None
 
 
 TIMEOUT = timedelta(minutes=60)
@@ -134,9 +128,6 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
             return None
         login = credentials.getLogin()
         password = credentials.getPassword()
-        ### SSO: send login request to sso.targetUrls
-        if sso_source is None:
-            sso_send_login(login, password)
         return dict(login=login, password=password)
 
     def extract2FactorCredentials(self, request, login, password,
@@ -151,10 +142,6 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         if credentials and credentials.validated:
             login = credentials.getLogin()
             password = credentials.getPassword()
-            ### SSO: send login request to sso.targetUrls
-            sso_source = request.get('sso_source', None)
-            if sso_source is None:
-                sso_send_login(login, password)
             return dict(login=login, password=password)
         return None
 
@@ -275,11 +262,3 @@ def getPrincipalForUsername(username, context, request):
         principal.id = authplugin.prefix + info.login
         return principal
 
-def sso_send_login(login, password):
-    if not sso:
-        return
-    data = dict(login=login, password=password, sso_source=sso.get('source', ''))
-    for url in sso['targets']:
-        resp = requests.post(url, data)
-        log.info('sso_login - url: %s, login: %s -> %s %s.' % (
-            url, login, resp.status_code, resp.text))
