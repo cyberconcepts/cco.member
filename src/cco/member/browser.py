@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2023 Helmut Merz helmutm@cy55.de
+#  Copyright (c) 2016 Helmut Merz helmutm@cy55.de
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -26,11 +26,11 @@ try:
     import jwcrypto.jws as jws
 except ImportError:
     pass
+except SyntaxError:
+    pass
 from datetime import timedelta
 from email.MIMEText import MIMEText
 import logging
-import requests
-
 from zope.app.exception.browser.unauthorized import Unauthorized as DefaultUnauth
 from zope.app.pagetemplate import ViewPageTemplateFile
 from zope.app.security.interfaces import IAuthentication
@@ -62,11 +62,6 @@ try:
 except ImportError:
     config = None
 
-try:
-    from config import single_sign_on as sso
-except ImportError:
-    sso = None
-
 log = logging.getLogger('cco.member.browser')
 
 _ = MessageFactory('cco.member')
@@ -77,40 +72,20 @@ template = ViewPageTemplateFile('auth.pt')
 #jwt_key = jwk.JWK.from_pem(config.jwt_key)
 
 
-def sso_send_login(login, password):
-    if not sso:
-        return
-    if request.get('sso_source', None) is not None:
-        return
-    data = dict(login=login, password=password, 
-                sso_source=sso.get('source', ''))
-    for url in sso['targets']:
-        resp = requests.post(url, data, allow_redirects=False)
-        log.info('sso_login - url: %s, login: %s -> %s.' % (
-            url, login, resp.status_code))
-
-
 class LoginConcept(ConceptView):
+
+    def checkPermissions(self):
+        return True
 
     @Lazy
     def macro(self):
         return template.macros['login_form']
 
-    @Lazy
-    def credentials(self):
-        return getCredentials(self.request)
-
-    def update(self, topLevel=True):
-        if 'SUBMIT' in self.request.form and not self.isAnonymous:
-            ### SSO: send login request to sso.targetUrls
-            cred = self.credentials
-            login = cred.getLogin()
-            password = cred.getPassword()
-            sso_send_login(login, password)
-        super(self, LoginConcept).update(topLevel=topLevel)
-
 
 class LoginForm(NodeView):
+
+    def checkPermissions(self):
+        return True
 
     @Lazy
     def macro(self):
@@ -124,17 +99,8 @@ class LoginForm(NodeView):
     def isVisible(self):
         return self.isAnonymous
 
-    @Lazy
-    def credentials(self):
-        return getCredentials(self.request)
-
     def update(self, topLevel=True):
         if 'SUBMIT' in self.request.form and not self.isAnonymous:
-            ### SSO: send login request to sso.targetUrls
-            cred = self.credentials
-            login = cred.getLogin()
-            password = cred.getPassword()
-            sso_send_login(login, password)
             self.request.response.redirect(self.topMenu.url)
             return False
         return True
@@ -142,9 +108,16 @@ class LoginForm(NodeView):
 
 class TanForm(LoginForm):
 
+    def checkPermissions(self):
+        return True
+
     @Lazy
     def macro(self):
         return template.macros['tan_form']
+
+    @Lazy
+    def credentials(self):
+        return getCredentials(self.request)
 
     def sendTanEmail(self):
         if self.credentials is None:
@@ -313,7 +286,6 @@ class PasswordReset(PasswordChange):
     )
 
     label = label_submit = _(u'label_reset_password')
-    password_reset_period = 15
 
     @Lazy
     def macro(self):
@@ -328,39 +300,13 @@ class PasswordReset(PasswordChange):
         return dict(password=u'')
 
     @Lazy
-    def token(self):
-        return self.request.form.get('token')
-
-    @Lazy
     def fields(self):
         result = super(PasswordReset, self).fields
-        if self.token and self.validateToken(self.token):
+        if self.request.form.get('token'):
             result = [r for r in result if r.name == 'password']
         else:
             result = [r for r in result if r.name == 'username']
         return result
-
-    def getSubject(self, lang=None, domain=None):
-        if not lang:
-            lang = self.languageInfo.language
-        if not domain:
-            try:
-                domain = config.baseDomain
-            except:
-                domain = self.request.getHeader('HTTP_HOST')
-        result = translate(_(u'pw_reset_mail_subject_$domain',
-                             mapping=dict(domain=domain)),
-                           target_language=lang)
-        return result
-
-    def getMessage(self, token, lang=None):
-        if not lang:
-            lang = self.languageInfo.language
-        reset_url = '%s?token=%s' % (self.request.getURL(), token)
-        message = translate(_(u'pw_reset_mail_text_$link',
-                              mapping=dict(link=reset_url)),
-                            target_language=lang)
-        return message
 
     def sendPasswordResetMail(self, sender, recipients=[], subject='',
                               message=''):
@@ -370,15 +316,6 @@ class PasswordReset(PasswordChange):
         msg['To'] = ', '.join(recipients)
         mailhost = component.getUtility(IMailDelivery, 'Mail')
         mailhost.send(sender, recipients, msg.as_string())
-
-    def validateToken(self, token, secret=None):
-        if not secret:
-            secret = jwk.JWK.from_pem(config.jwt_key)
-        try:
-            header, claims = jwt.verify_jwt(token, secret, ['PS256'])
-        except (jwt._JWTError, jws.InvalidJWSSignature, ValueError):
-            return False
-        return True
 
     def update(self):
         form = self.request.form
@@ -393,12 +330,13 @@ class PasswordReset(PasswordChange):
         token = form.get('token')
         secret = jwk.JWK.from_pem(config.jwt_key)
         if token:
-            if not self.validateToken(token, secret):
+            try:
+                header, claims = jwt.verify_jwt(token, secret, ['PS256'])
+            except (jwt._JWTError, jws.InvalidJWSSignature, ValueError):
                 fi = formState.fieldInstances['password']
                 fi.setError('invalid_token', self.formErrors)
                 formState.severity = max(formState.severity, fi.severity)
                 return True
-            header, claims = jwt.verify_jwt(token, secret, ['PS256'])
             username = claims.get('username')
             principal = getPrincipalForUsername(username, self.context,
                                                 self.request)
@@ -427,8 +365,7 @@ class PasswordReset(PasswordChange):
             person = adapted(person)
             payload = dict(username=username)
             token = jwt.generate_jwt(payload, secret, 'PS256',
-                                     timedelta(minutes=getattr(
-                                         self, 'password_reset_period', 15)))
+                                     timedelta(minutes=15))
             addr = self.getMailAddress(person)
             if addr:
                 recipients = [addr]
@@ -442,11 +379,19 @@ class PasswordReset(PasswordChange):
                 domain = config.baseDomain
             except:
                 domain = self.request.getHeader('HTTP_HOST')
+            subject = translate(_(u'pw_reset_mail_subject_$domain',
+                                  mapping=dict(domain=domain)),
+                                target_language=lang)
+
+            reset_url = '%s?token=%s' % (self.request.getURL(), token)
+            message = translate(_(u'pw_reset_mail_text_$link',
+                                  mapping=dict(link=reset_url)),
+                                target_language=lang)
             senderInfo = self.globalOptions('email.sender')
             sender = senderInfo and senderInfo[0] or 'info@loops.cy55.de'
             sender = sender.encode('UTF-8')
-            self.sendPasswordResetMail(sender, recipients, self.getSubject(),
-                                       self.getMessage(token))
+            self.sendPasswordResetMail(sender, recipients, subject,
+                                       message)
             url = '%s?error_message=%s' % (self.url, self.reset_mail_message)
             self.request.response.redirect(url)
             return False
