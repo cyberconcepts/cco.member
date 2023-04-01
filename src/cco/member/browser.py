@@ -111,14 +111,17 @@ class LoginForm(NodeView):
     def isVisible(self):
         return self.isAnonymous
 
+    @Lazy
+    def credentials(self):
+        return getCredentials(self.request)
+
     def update(self, topLevel=True):
-        form = self.request.form
-        if 'SUBMIT' in form and not self.isAnonymous:
+        if 'SUBMIT' in self.request.form and not self.isAnonymous:
             ### SSO: send login request to sso.targetUrls
-            login = form.get('login')
-            password = form.get('password')
-            if login and password:
-                sso_send_login(login, password)
+            cred = self.credentials
+            login = cred.getLogin()
+            password = cred.getPassword()
+            sso_send_login(login, password)
             self.request.response.redirect(self.topMenu.url)
             return False
         return True
@@ -129,10 +132,6 @@ class TanForm(LoginForm):
     @Lazy
     def macro(self):
         return template.macros['tan_form']
-
-    @Lazy
-    def credentials(self):
-        return getCredentials(self.request)
 
     def sendTanEmail(self):
         if self.credentials is None:
