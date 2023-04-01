@@ -125,7 +125,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
             credentials = SessionCredentials(login, password)
             ### SSO: send login request to sso.targets
             if request.get('sso_source', None) is None:
-                sso_send_login(login, password)
+                sso_send_login(login, password, request)
         if credentials:
             sso_source = request.get('sso_source', None)
             credentials.sso_source = sso_source
@@ -153,7 +153,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
             password = credentials.getPassword()
             ### SSO: send login request to sso.targets
             if tan_a and tan_b:
-                sso_send_login(login, password)
+                sso_send_login(login, password, request)
             return dict(login=login, password=password)
         return None
 
@@ -274,13 +274,14 @@ def getPrincipalForUsername(username, context, request):
         principal.id = authplugin.prefix + info.login
         return principal
 
-def sso_send_login(login, password):
+def sso_send_login(login, password, request):
     if not sso:
         return
     data = dict(login=login, password=password, 
                 sso_source=sso.get('source', ''))
     for url in sso['targets']:
-        resp = requests.post(url, data, allow_redirects=False)
+        resp = requests.post(url, data, cookies=dict(request.cookies),
+                             allow_redirects=False)
         log.info('sso_login - url: %s, login: %s -> %s.' % (
             url, login, resp.status_code))
 
