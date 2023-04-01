@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2023 Helmut Merz helmutm@cy55.de
+#  Copyright (c) 2016 Helmut Merz helmutm@cy55.de
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@ except ImportError:
 from datetime import timedelta
 from email.MIMEText import MIMEText
 import logging
-
 from zope.app.exception.browser.unauthorized import Unauthorized as DefaultUnauth
 from zope.app.pagetemplate import ViewPageTemplateFile
 from zope.app.security.interfaces import IAuthentication
@@ -71,7 +70,6 @@ template = ViewPageTemplateFile('auth.pt')
 #jwt_key = jwk.JWK.from_pem(config.jwt_key)
 
 
-
 class LoginConcept(ConceptView):
 
     @Lazy
@@ -105,6 +103,10 @@ class TanForm(LoginForm):
     @Lazy
     def macro(self):
         return template.macros['tan_form']
+
+    @Lazy
+    def credentials(self):
+        return getCredentials(self.request)
 
     def sendTanEmail(self):
         if self.credentials is None:
