@@ -105,7 +105,8 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         if (authMethod == 'standard' and
                 traversalStack and traversalStack[-1].startswith('++auth++')):
             ### SSO: do not switch to 2factor if logged-in via sso
-            if not getattr(credentials, 'sso_source', None):
+            #if not getattr(credentials, 'sso_source', None):
+            if not credentials:
                 authMethod = traversalStack[-1][8:]
         viewAnnotations = request.annotations.setdefault('loops.view', {})
         viewAnnotations['auth_method'] = authMethod
@@ -121,17 +122,17 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
 
     def extractStandardCredentials(self, request, login, password,
                                    session, credentials):
+        sso_source = request.get('sso_source', None)
         if login and password:
             credentials = SessionCredentials(login, password)
             ### SSO: send login request to sso.targets
-            if request.get('sso_source', None) is None:
+            if not sso_source:
                 sso_send_login(login, password, request)
         if credentials:
-            sso_source = request.get('sso_source', None)
             credentials.sso_source = sso_source
             sessionData = session['zope.pluggableauth.browserplugins']
             ### SSO: do not overwrite existing credentials on sso login
-            if not sessionData.get('credentials') or sso_source is None: 
+            if not sessionData.get('credentials') or not sso_source:
                 sessionData['credentials'] = credentials
         else:
             return None

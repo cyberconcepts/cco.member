@@ -50,6 +50,8 @@ TAN entry form) is executed.
 What if we enter data for authentication phase 2? No authentication
 because the hashes don't match.
 
+  >>> sdata['credentials'] = None
+
   >>> input = dict(hash='#dummy#', tan_a='1', tan_b='2')
   >>> req = TestRequest(home, form=input)
   >>> req.setTraversalStack(['++auth++2factor'])
