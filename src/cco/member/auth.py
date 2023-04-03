@@ -134,7 +134,8 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
             sessionData = session['zope.pluggableauth.browserplugins']
             ### SSO: do not overwrite existing credentials on sso login
             if not sessionData.get('credentials') or not sso_source:
-                sessionData['credentials'] = credentials
+                if credentials != sessionData.get('credentials'):
+                    sessionData['credentials'] = credentials
         else:
             return None
         login = credentials.getLogin()
@@ -198,6 +199,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
             return None
         credentials.validated = True
         log.info('Credentials valid.')
+        # TODO: only overwrite if changed:
         sessionData['credentials'] = credentials
         if request.get('camefrom'):
             request.response.redirect(request['camefrom'])
