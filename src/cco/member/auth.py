@@ -126,10 +126,11 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         if login and password:
             credentials = SessionCredentials(login, password)
             ### SSO: send login request to sso.targets
-            if not sso_source:
+            if sso_source:
+                credentials.sso_source = sso_source
+            else:
                 sso_send_login(login, password, request)
         if credentials:
-            credentials.sso_source = sso_source
             sessionData = session['zope.pluggableauth.browserplugins']
             ### SSO: do not overwrite existing credentials on sso login
             if not sessionData.get('credentials') or not sso_source:
