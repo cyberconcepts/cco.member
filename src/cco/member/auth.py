@@ -100,7 +100,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         credentials = None
         if sessionData:
             credentials = sessionData.get('credentials')
-            if isinstance(sessionData, TwoFactorSessionCredentials):
+            if isinstance(credentials, TwoFactorSessionCredentials):
                 authMethod = '2factor'
         if (authMethod == 'standard' and
                 traversalStack and traversalStack[-1].startswith('++auth++')):
