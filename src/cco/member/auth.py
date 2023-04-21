@@ -202,7 +202,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         # TODO: only overwrite if changed:
         sessionData['credentials'] = credentials
         if request.get('camefrom'):
-            request.response.redirect(request['camefrom'])
+            request.response.redirect(request['camefrom'], trusted=True)
         return credentials
 
     def getUrl(self, request, action, params):
