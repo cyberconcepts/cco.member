@@ -160,7 +160,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
             return dict(login=login, password=password)
         return None
 
-    def processPhase1(self, request, session, login, password):
+    def processPhase1(self, request, session, login, password, msg=None):
         sessionData = session['zope.pluggableauth.browserplugins']
         credentials = TwoFactorSessionCredentials(login, password)
         sessionData['credentials'] = credentials
@@ -168,6 +168,8 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         log.info("Processing phase 1, TAN: %s. " % credentials.tan)
         params = dict(h=credentials.hash,
                       a=credentials.tanA+1, b=credentials.tanB+1)
+        if msg:
+            params['loops.message'] = msg
         url = self.getUrl(request, '2fa_tan_form.html', params)
         return request.response.redirect(url, trusted=True)
 

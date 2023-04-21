@@ -66,8 +66,7 @@ _ = MessageFactory('cco.member')
 
 template = ViewPageTemplateFile('auth.pt')
 
-#jwt_key = jwk.JWK.generate(kty='RSA', size=2048)
-#jwt_key = jwk.JWK.from_pem(config.jwt_key)
+JWT_SECRET = jwk.JWK.from_pem(config.jwt_key)
 
 
 class LoginConcept(ConceptView):
@@ -276,6 +275,7 @@ class PasswordReset(PasswordChange):
 
     label = label_submit = _(u'label_reset_password')
     password_reset_period = 15
+    ignoreRedirect = False
 
     @Lazy
     def macro(self):
@@ -335,10 +335,11 @@ class PasswordReset(PasswordChange):
 
     def validateToken(self, token, secret=None):
         if not secret:
-            secret = jwk.JWK.from_pem(config.jwt_key)
+            secret = JWT_SECRET
         try:
             header, claims = jwt.verify_jwt(token, secret, ['PS256'])
-        except (jwt._JWTError, jws.InvalidJWSSignature, ValueError):
+        except (jwt._JWTError, jws.InvalidJWSSignature,
+                jws.InvalidJWSObject, ValueError):
             return False
         return True
 
@@ -353,7 +354,7 @@ class PasswordReset(PasswordChange):
         if formState.severity > 0:
             return True
         token = form.get('token')
-        secret = jwk.JWK.from_pem(config.jwt_key)
+        secret = JWT_SECRET
         if token:
             if not self.validateToken(token, secret):
                 fi = formState.fieldInstances['password']
@@ -410,7 +411,8 @@ class PasswordReset(PasswordChange):
             self.sendPasswordResetMail(sender, recipients, self.getSubject(),
                                        self.getMessage(token))
             url = '%s?error_message=%s' % (self.url, self.reset_mail_message)
-            self.request.response.redirect(url)
+            if not self.ignoreRedirect:
+                self.request.response.redirect(url)
             return False
 
         url = '%s?error_message=%s' % (self.url, self.message)
