@@ -52,7 +52,7 @@ except ImportError:
 
 
 TIMEOUT = timedelta(minutes=60)
-#PRIVKEY = "6LcGPQ4TAAAAABCyA_BCAKPkD6wW--IhUicbAZ11"   # for captcha
+
 log = logging.getLogger('cco.member.auth')
 
 
@@ -87,21 +87,25 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
     tan_a_field = 'tan_a'
     tan_b_field = 'tan_b'
     hash_field = 'hash'
+    tokenField = 'token'
 
     def extractCredentials(self, request):
+        from cco.member.browser import validateToken
         if not IHTTPRequest.providedBy(request):
             return None
         login = request.get(self.loginfield, None)
         password = request.get(self.passwordfield, None)
+        token = request.get(self.tokenField)
         session = ISession(request)
         sessionData = session.get('zope.pluggableauth.browserplugins')
         traversalStack = request.getTraversalStack()
         authMethod = 'standard'
         credentials = None
-        if sessionData:
-            credentials = sessionData.get('credentials')
-            if isinstance(credentials, TwoFactorSessionCredentials):
-                authMethod = '2factor'
+        if not token or (token and not validateToken(token)):
+            if sessionData:
+                credentials = sessionData.get('credentials')
+                if isinstance(credentials, TwoFactorSessionCredentials):
+                    authMethod = '2factor'
         if (authMethod == 'standard' and
                 traversalStack and traversalStack[-1].startswith('++auth++')):
             ### SSO: do not switch to 2factor if logged-in via sso

@@ -69,6 +69,17 @@ template = ViewPageTemplateFile('auth.pt')
 JWT_SECRET = jwk.JWK.from_pem(config.jwt_key)
 
 
+def validateToken(token, secret=None):
+    if not secret:
+        secret = JWT_SECRET
+        try:
+            header, claims = jwt.verify_jwt(token, secret, ['PS256'])
+        except (jwt._JWTError, jws.InvalidJWSSignature,
+                jws.InvalidJWSObject, ValueError):
+            return False
+        return True
+
+
 class LoginConcept(ConceptView):
 
     @Lazy
@@ -296,7 +307,7 @@ class PasswordReset(PasswordChange):
     @Lazy
     def fields(self):
         result = super(PasswordReset, self).fields
-        if self.token and self.validateToken(self.token):
+        if self.token and validateToken(self.token):
             result = [r for r in result if r.name == 'password']
         else:
             result = [r for r in result if r.name == 'username']
@@ -333,16 +344,6 @@ class PasswordReset(PasswordChange):
         mailhost = component.getUtility(IMailDelivery, 'Mail')
         mailhost.send(sender, recipients, msg.as_string())
 
-    def validateToken(self, token, secret=None):
-        if not secret:
-            secret = JWT_SECRET
-        try:
-            header, claims = jwt.verify_jwt(token, secret, ['PS256'])
-        except (jwt._JWTError, jws.InvalidJWSSignature,
-                jws.InvalidJWSObject, ValueError):
-            return False
-        return True
-
     def update(self):
         form = self.request.form
         if not form.get('action'):
@@ -356,7 +357,7 @@ class PasswordReset(PasswordChange):
         token = form.get('token')
         secret = JWT_SECRET
         if token:
-            if not self.validateToken(token, secret):
+            if not validateToken(token):
                 fi = formState.fieldInstances['password']
                 fi.setError('invalid_token', self.formErrors)
                 formState.severity = max(formState.severity, fi.severity)
