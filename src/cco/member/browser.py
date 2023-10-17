@@ -66,7 +66,10 @@ _ = MessageFactory('cco.member')
 
 template = ViewPageTemplateFile('auth.pt')
 
-JWT_SECRET = jwk.JWK.from_pem(config.jwt_key)
+try:
+    JWT_SECRET = jwk.JWK.from_pem(config.jwt_key)
+except:
+    JWT_SECRET = None
 
 
 def validateToken(token, secret=None):

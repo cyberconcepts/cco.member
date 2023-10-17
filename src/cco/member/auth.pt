@@ -66,8 +66,7 @@
         Please enter digits 
         <strong tal:content="request/a" i18n:name="a">A</strong> and 
         <strong tal:content="request/b" i18n:name="b">B</strong> below.</p>
-      <form method="post"
-            tal:attributes="action request/camefrom|baseUrl">
+	  <form method="post" tal:attributes="action baseUrl">
         <input type="hidden" name="hash" 
                tal:attributes="value request/h|nothing" />
         <input type="hidden" name="camefrom"
