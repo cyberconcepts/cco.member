@@ -347,6 +347,9 @@ class PasswordReset(PasswordChange):
         mailhost = component.getUtility(IMailDelivery, 'Mail')
         mailhost.send(sender, recipients, msg.as_string())
 
+    def validateToken(self, token, secret=None):
+        return validateToken(token, secret)
+
     def update(self):
         form = self.request.form
         if not form.get('action'):
