@@ -22,7 +22,6 @@ Login, logout, unauthorized stuff.
 
 try:
     import python_jwt as jwt
-    import jwcrypto.jwk as jwk
     import jwcrypto.jws as jws
 except ImportError:
     pass
@@ -42,7 +41,7 @@ from zope.publisher.interfaces.http import IHTTPRequest
 from zope.sendmail.interfaces import IMailDelivery
 
 from cco.member.auth import getCredentials, getPrincipalFromCredentials,\
-    getPrincipalForUsername
+    getPrincipalForUsername, JWT_SECRET
 from cco.member.interfaces import IPasswordChange, IPasswordReset
 from cco.member.pwpolicy import checkPassword
 from cybertools.composer.schema.browser.common import schema_macros
@@ -65,11 +64,6 @@ log = logging.getLogger('cco.member.browser')
 _ = MessageFactory('cco.member')
 
 template = ViewPageTemplateFile('auth.pt')
-
-try:
-    JWT_SECRET = jwk.JWK.from_pem(config.jwt_key)
-except:
-    JWT_SECRET = None
 
 
 def validateToken(token, secret=None):

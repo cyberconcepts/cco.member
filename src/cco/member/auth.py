@@ -50,9 +50,21 @@ try:
 except ImportError:
     sso = None
 
+try:
+    from config import jwt_key
+except ImportError:
+    jwt_key = None
+
+try:
+    import python_jwt as jwt
+    import jwcrypto.jwk as jwk
+except ImportError:
+    pass
+
 
 TIMEOUT = timedelta(minutes=60)
-
+JWT_SECRET = jwk.JWK.from_pem(jwt_key)
+#PRIVKEY = "6LcGPQ4TAAAAABCyA_BCAKPkD6wW--IhUicbAZ11"   # for captcha
 log = logging.getLogger('cco.member.auth')
 
 
@@ -88,6 +100,34 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
     tan_b_field = 'tan_b'
     hash_field = 'hash'
     tokenField = 'token'
+    secure_cookie_token_ns = 'zope_3_sct'
+
+    def setSecureCookieToken(self, credentials, request):
+        response = request.response
+        options = {}
+        expires = 'Tue, 19 Jan 2038 00:00:00 GMT'
+        options['expires'] = expires
+        options['secure'] = True
+        options['HttpOnly'] = True
+        payload = dict(sub=credentials.login)
+        secret = jwk.JWK.from_pem(jwt_key)
+        token = jwt.generate_jwt(payload, secret, 'PS256', timedelta(days=365))
+        response.setCookie(
+            self.secure_cookie_token_ns, token,
+            path=request.getApplicationURL(path_only=True),
+            **options)
+
+    def validateSecureCookieToken(self, request, login):
+        token = request.getCookies().get(self.secure_cookie_token_ns)
+        if token:
+            try:
+                header, claims = jwt.verify_jwt(token, JWT_SECRET, ['PS256'])
+                if claims.get('sub') == login:
+                    return True
+            except Exception as e:
+                log.warn('invalid cookie token %s' % token)
+                return False
+        return False
 
     def extractCredentials(self, request):
         from cco.member.browser import validateToken
@@ -115,7 +155,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         viewAnnotations = request.annotations.setdefault('loops.view', {})
         viewAnnotations['auth_method'] = authMethod
         #log.info('authentication method: %s.' % authMethod)
-        if authMethod == 'standard':
+        if authMethod == 'standard' or self.validateSecureCookieToken(request, login):
             return self.extractStandardCredentials(
                             request, login, password, session, credentials)
         elif authMethod == '2factor':
@@ -152,6 +192,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         tan_b = request.get(self.tan_b_field, None)
         hash = request.get(self.hash_field, None)
         if (login and password) and not (tan_a or tan_b or hash):
+            sessionData = session.get('zope.pluggableauth.browserplugins')
             return self.processPhase1(request, session, login, password)
         if (tan_a and tan_b and hash) and not (login or password):
             credentials = self.processPhase2(request, session, hash, tan_a, tan_b)
@@ -171,7 +212,9 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         # send email
         log.info("Processing phase 1, TAN: %s. " % credentials.tan)
         params = dict(h=credentials.hash,
-                      a=credentials.tanA+1, b=credentials.tanB+1)
+                      a=credentials.tanA+1,
+                      b=credentials.tanB+1,
+                      skip2factor=request.form.get('skip2factor'))
         if msg:
             params['loops.message'] = msg
         url = self.getUrl(request, '2fa_tan_form.html', params)
@@ -198,7 +241,9 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
             msg = 'TAN digits not correct.'
             log.warn(msg)
             params = dict(h=credentials.hash,
-                          a=credentials.tanA+1, b=credentials.tanB+1)
+                          a=credentials.tanA+1,
+                          b=credentials.tanB+1,
+                          skip2factor=request.form.get('skip2factor'))
             params['loops.message'] = msg
             url = self.getUrl(request, '2fa_tan_form.html', params)
             request.response.redirect(url, trusted=True)
@@ -207,6 +252,8 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
         log.info('Credentials valid.')
         # TODO: only overwrite if changed:
         sessionData['credentials'] = credentials
+        if request.form.get('skip2factor'):
+            self.setSecureCookieToken(credentials, request)
         if request.get('camefrom'):
             request.response.redirect(request['camefrom'], trusted=True)
         return credentials
