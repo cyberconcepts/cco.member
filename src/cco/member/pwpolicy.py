@@ -26,6 +26,8 @@ def checkPassword(pw):
         return False
     safety = dict(upper=False, lower=False, nonalpha=False)
     for c in pw:
+        if ord(c) > 128:
+            return False
         if c.isupper():
             safety['upper'] = True
         elif c.islower():
