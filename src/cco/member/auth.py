@@ -150,7 +150,7 @@ class SessionCredentialsPlugin(BaseSessionCredentialsPlugin):
                 traversalStack and traversalStack[-1].startswith('++auth++')):
             ### SSO: do not switch to 2factor if logged-in via sso
             #if not getattr(credentials, 'sso_source', None):
-            if not credentials:
+            if not credentials and (not token or not validateToken(token)):
                 authMethod = traversalStack[-1][8:]
         viewAnnotations = request.annotations.setdefault('loops.view', {})
         viewAnnotations['auth_method'] = authMethod
