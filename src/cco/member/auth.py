@@ -63,8 +63,13 @@ except ImportError:
 
 
 TIMEOUT = timedelta(minutes=60)
-JWT_SECRET = jwk.JWK.from_pem(jwt_key)
+if jwt_key is not None:
+    JWT_SECRET = jwk.JWK.from_pem(jwt_key)
+else:
+    JWT_SECRET = None
+
 #PRIVKEY = "6LcGPQ4TAAAAABCyA_BCAKPkD6wW--IhUicbAZ11"   # for captcha
+
 log = logging.getLogger('cco.member.auth')
 
 
